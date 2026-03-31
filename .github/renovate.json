@@ -1,0 +1,43 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "group:monorepos",
+    "group:recommended",
+    ":prHourlyLimitNone",
+    ":prConcurrentLimitNone"
+  ],
+  "schedule": ["before 6am on monday"],
+  "timezone": "Asia/Ho_Chi_Minh",
+  "dependencyDashboard": true,
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["^@nx/", "^nx$"],
+      "groupName": "nx packages"
+    },
+    {
+      "matchPackagePatterns": ["^@vitejs/", "^vite", "^vitest"],
+      "groupName": "vite packages"
+    },
+    {
+      "matchPackagePatterns": ["^vue", "^@vue/"],
+      "groupName": "vue packages"
+    },
+    {
+      "matchPackagePatterns": ["^primevue", "^@primevue/", "^@primeuix/", "^primeicons", "^tailwindcss-primeui"],
+      "groupName": "prime packages"
+    },
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true,
+      "automergeType": "pr"
+    }
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/tmp/**",
+    "**/coverage/**"
+  ]
+}

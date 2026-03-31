@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+
+/* Align TailwindCSS dark: variant with PrimeVue's darkModeSelector: '.app-dark'
+   so both systems activate dark mode from the same trigger. */
+@custom-variant dark (&:where(.app-dark, .app-dark *));

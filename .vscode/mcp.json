@@ -1,0 +1,16 @@
+{
+  "servers": {
+    "sequential-thinking": {
+      "command": "pnpm",
+      "args": ["dlx", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "primevue": {
+      "command": "pnpm",
+      "args": ["dlx", "@primevue/mcp@latest"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"]
+    }
+  }
+}

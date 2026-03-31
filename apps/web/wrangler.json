@@ -1,0 +1,6 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "livemate-web",
+  "pages_build_output_dir": "../../dist/apps/web",
+  "compatibility_date": "2024-04-01"
+}

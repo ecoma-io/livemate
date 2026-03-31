@@ -1,0 +1,35 @@
+
+{
+  "name": "web-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/web-e2e/src",
+  "implicitDependencies": ["web", "api"],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/playwright:playwright",
+      "outputs": ["{workspaceRoot}/dist/.playwright/apps/web-e2e"],
+      "options": {
+        "skipInstall": true,
+        "config": "apps/web-e2e/playwright.config.ts"
+      }
+    },
+    "e2e:last-failed": {
+      "executor": "@nx/playwright:playwright",
+      "outputs": ["{workspaceRoot}/dist/.playwright/apps/web-e2e"],
+      "options": {
+        "skipInstall": true,
+        "lastFailed": true,
+        "config": "apps/web-e2e/playwright.config.ts"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "inputs": ["default"],
+      "options": {
+        "command": "eslint .",
+        "cwd": "apps/web-e2e"
+      }
+    }
+  }
+}

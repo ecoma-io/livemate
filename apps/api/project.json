@@ -1,0 +1,82 @@
+{
+  "name": "api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/api/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "production",
+        "^production",
+        { "externalDependencies": ["typescript"] }
+      ],
+      "options": {
+        "cwd": "apps/api",
+        "command": "tsc --noEmit -p tsconfig.app.json"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/apps/api/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        { "externalDependencies": ["eslint"] }
+      ],
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "cwd": "apps/api",
+        "command": "eslint ."
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "^production",
+        { "externalDependencies": ["vitest"] },
+        { "env": "CI" }
+      ],
+      "outputs": ["{workspaceRoot}/coverage/apps/api"],
+      "options": {
+        "cwd": "apps/api",
+        "command": "vitest run"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "inputs": ["production", "^production"],
+      "outputs": ["{workspaceRoot}/dist/apps/api"],
+      "options": {
+        "command": "wrangler deploy --dry-run --outdir=../../dist/apps/api",
+        "cwd": "apps/api"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "wrangler d1 migrations apply livemate --local",
+          "wrangler dev --port 18181 --ip 0.0.0.0"
+        ],
+        "parallel": false,
+        "cwd": "apps/api"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "wrangler d1 migrations apply livemate --remote",
+          "wrangler deploy"
+        ],
+        "parallel": false,
+        "cwd": "apps/api"
+      }
+    }
+  }
+}

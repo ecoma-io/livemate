@@ -1,0 +1,81 @@
+{
+  "name": "web",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/web/src",
+  "targets": {
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "production",
+        "^production",
+        { "externalDependencies": ["vue-tsc", "typescript"] }
+      ],
+      "options": {
+        "cwd": "apps/web",
+        "command": "vue-tsc --noEmit -p tsconfig.app.json"
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "inputs": [
+        "default",
+        "^default",
+        "{workspaceRoot}/eslint.config.mjs",
+        "{workspaceRoot}/apps/web/eslint.config.mjs",
+        "{workspaceRoot}/tools/eslint-rules/**/*",
+        { "externalDependencies": ["eslint"] }
+      ],
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "cwd": "apps/web",
+        "command": "eslint ."
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "inputs": [
+        "default",
+        "^production",
+        { "externalDependencies": ["vitest"] },
+        { "env": "CI" }
+      ],
+      "outputs": ["{workspaceRoot}/coverage/apps/web"],
+      "options": {
+        "cwd": "apps/web",
+        "command": "vitest run"
+      }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["^build"],
+      "inputs": [
+        "production",
+        "^production",
+        { "externalDependencies": ["vite"] }
+      ],
+      "outputs": ["{workspaceRoot}/dist/apps/web"],
+      "options": {
+        "cwd": "apps/web",
+        "command": "vite build"
+      }
+    },
+    "serve": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": {
+        "cwd": "apps/web",
+        "command": "vite"
+      }
+    },
+    "deploy": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["build"],
+      "options": {
+        "command": "wrangler pages deploy --branch main",
+        "cwd": "apps/web"
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  workflow_dispatch: # Manually run via button
+    inputs:
+      dryRun:
+        description: 'Dry Run (Do not create actual tag/commit)'
+        required: true
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permission to create commit and push tag to Github
+    
+    steps:
+      - name: Fail if not main branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "Error: Release can only be created from the main branch."
+          exit 1
+
+      - name: Generate App Token
+        id: generate_token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.ECOMA_APP_ID }}
+          private-key: ${{ secrets.ECOMA_APP_KEY }}
+
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Requires fetching full commit history to read Changelog
+          token: ${{ steps.generate_token.outputs.token }} # Must use app token to checkout to have push permission
+
+      - name: Setup Node.js & pnpm
+        uses: ./.github/actions/setup
+
+      - name: Configure Git User for Bot
+        run: |
+          git config --global user.email "bot@ecoma.dev"
+          git config --global user.name "Ecoma Bot"
+
+      - name: Execute Nx Release
+        run: pnpm nx release --skip-publish ${{ inputs.dryRun && '--dry-run' || '' }}
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          NODE_AUTH_TOKEN: ${{ steps.generate_token.outputs.token }}

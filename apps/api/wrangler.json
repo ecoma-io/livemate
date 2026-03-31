@@ -1,0 +1,29 @@
+﻿{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "livemate-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-04-01",
+  "routes": [
+    {
+      "pattern": "livemate.ecoma.io/api*",
+      "zone_name": "ecoma.io"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "livemate",
+      "database_id": "d16358f1-962d-4761-bc07-050b3a741d5a",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "livemate"
+    }
+  ],
+  "triggers": {
+    "crons": ["0 3 * * *"]
+  }
+}

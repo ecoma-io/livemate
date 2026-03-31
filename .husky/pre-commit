@@ -1,0 +1,2 @@
+npx lint-staged
+npx nx run-many -t typecheck lint test build

@@ -1,0 +1,1 @@
+npx nx run-many -t e2e --parallel=1

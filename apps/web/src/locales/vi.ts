@@ -1,0 +1,151 @@
+import type { LocaleMessages } from './index';
+
+const vi: LocaleMessages = {
+  nav: {
+    studio: 'Live Studio',
+    soundboard: 'Soundboard',
+    account: 'Tài Khoản',
+  },
+  soundboardForm: {
+    dialogTitle: 'Tạo Nhóm Âm Thanh Mới',
+    renameDialogTitle: 'Đổi Tên Nhóm Âm Thanh',
+    nameLabel: 'Tên Nhóm',
+    colorLabel: 'Màu Sắc',
+    submitButton: 'Tạo Ngay',
+    renameSubmitButton: 'Lưu',
+    nameTooLong: 'Tên không được vượt quá 24 ký tự',
+    toast: {
+      createSuccess: 'Đã Tạo Nhóm Âm Thanh',
+      createError: 'Lỗi',
+      renameSuccess: 'Đã Đổi Tên Nhóm Âm Thanh',
+      renameError: 'Lỗi',
+    },
+  },
+  soundboardView: {
+    pageTitle: 'Quản Lý Bảng Âm Thanh',
+    addGroup: 'Thêm Nhóm Âm Thanh',
+    sortMode: 'Sắp Xếp Nhóm',
+    sortModeDone: 'Xong',
+    moreOptions: 'Tùy chọn khác',
+    renderAllMissing: 'Tạo Các Biến Thể Còn Thiếu',
+    loadError: 'Không thể tải danh sách',
+    retryButton: 'Thử Lại',
+    confirmDeleteGroup: {
+      message: 'Xóa nhóm âm thanh này và tất cả tệp âm thanh?',
+      header: 'Xác Nhận Xóa',
+    },
+    confirmDeleteTrack: {
+      message:
+        'Thao tác này sẽ xóa vĩnh viễn bản nhạc và TẤT CẢ các biến thể tốc độ đã tạo. Không thể hoàn tác.',
+      header: 'Xóa Bản Nhạc',
+    },
+    confirmDeleteVariant: {
+      message: 'Xóa biến thể tốc độ này? Bạn có thể tạo lại sau.',
+      header: 'Xóa Biến Thể',
+    },
+    toast: {
+      deleteGroupSuccess: 'Đã Xóa Nhóm Âm Thanh',
+      deleteTrackSuccess: 'Đã Xóa Bản Nhạc',
+      deleteVariantSuccess: 'Đã Xóa Biến Thể',
+      fileTooLarge: 'Tệp Quá Lớn',
+      fileTooLargeDetail: '{filename}: giới hạn 2MB',
+      uploadError: 'Lỗi Tải Lên',
+      uploadSuccess: 'Đã tải lên {count} bản nhạc',
+    },
+    common: {
+      cancel: 'Hủy',
+      delete: 'Xóa',
+    },
+  },
+  audioGroupCard: {
+    dragAriaLabel: 'Kéo để sắp xếp lại',
+    namePlaceholder: 'Tên nhóm...',
+    renderAllTooltip: 'Tạo tất cả biến thể còn thiếu',
+    uploadTooltip: 'Tải lên tệp âm thanh',
+    trackNamePlaceholder: 'Tên bản nhạc...',
+    stopAriaLabel: 'Dừng',
+    playAriaLabel: 'Phát {speed}',
+    statusReady: 'Sẵn Sàng',
+    statusMissing: 'Chưa Có',
+    renderTooltip: 'Tạo tốc độ {speed}',
+    deleteTrackTooltip: 'Xóa bản nhạc và tất cả biến thể',
+    deleteVariantTooltip: 'Xóa biến thể {speed}',
+    dropZoneInstruction: 'Kéo thả hoặc {clickHere} tệp âm thanh',
+    dropZoneClickHere: 'nhấn để chọn',
+    collapseAriaLabel: 'Thu gọn bản nhạc',
+    expandAriaLabel: 'Mở rộng bản nhạc',
+    colorPickerDialogTitle: 'Chọn Màu Nhóm',
+    menu: {
+      ariaLabel: 'Tùy chọn nhóm',
+      rename: 'Đổi Tên',
+      changeColor: 'Đổi Màu',
+      renderAll: 'Tạo Tất Cả Còn Thiếu',
+      delete: 'Xóa Nhóm',
+    },
+    dropZoneHint: 'Nhiều tệp • Tối đa 2MB/tệp',
+  },
+  soundboardEmpty: {
+    heading: 'Chưa Có Nhóm Âm Thanh',
+    description:
+      'Bắt đầu bằng cách tạo một Nhóm Âm Thanh để quản lý các tệp âm thanh phát sóng.',
+    ctaButton: 'Tạo Nhóm Âm Thanh Đầu Tiên',
+  },
+  processingDialog: {
+    dialogTitle: 'Xử Lý Âm Thanh',
+    closeButton: 'Đóng',
+    filesProgress: '{completed} / {total} bản nhạc',
+    errorCount: '{count} lỗi',
+    currentFile: 'Tệp hiện tại',
+    phase: {
+      loading: 'Đang khởi tạo...',
+      downloading: 'Đang tải tệp nguồn...',
+      rendering: 'Đang tạo biến thể tốc độ...',
+      uploading: 'Đang lưu lên máy chủ...',
+      error: 'Đã xảy ra lỗi',
+      done: 'Hoàn thành!',
+    },
+  },
+  studio: {
+    pageTitle: 'Phát Trực Tiếp',
+    liveStatus: '🔴 TRỰC TIẾP',
+    readyStatus: 'Sẵn Sàng',
+    noAudioForSpeed: 'Không có âm thanh cho tốc độ {speed}x',
+    goToSoundboard:
+      'Đi tới Quản Lý Bảng Âm Thanh để tạo các biến thể âm thanh.',
+    stopButtonIdle: '⏹ Dừng',
+    stopButtonActive: 'DỪNG NGAY',
+    volumeLabel: 'Âm Lượng',
+    loadError: 'Không thể tải các nhóm âm thanh',
+    retryButton: 'Thử Lại',
+  },
+  audioRenderer: {
+    missingOriginalError: 'Không tìm thấy tệp gốc (1.0x)',
+    toast: {
+      renderError: 'Lỗi Tạo Biến Thể',
+    },
+  },
+  loginView: {
+    title: 'LiveMate',
+    subtitle: 'Đăng nhập để tiếp tục',
+    usernameLabel: 'Tên đăng nhập',
+    passwordLabel: 'Mật khẩu',
+    submitButton: 'Đăng Nhập',
+    invalidCredentials: 'Tên đăng nhập hoặc mật khẩu không đúng',
+  },
+  theme: {
+    auto: 'Tự Động (Hệ Thống)',
+    light: 'Chế Độ Sáng',
+    dark: 'Chế Độ Tối',
+  },
+  account: {
+    pageTitle: 'Tài Khoản',
+    languageLabel: 'Ngôn Ngữ',
+    languageAuto: 'Tự Động (Hệ Thống)',
+    languageEn: 'English',
+    languageVi: 'Tiếng Việt',
+    displayModeLabel: 'Chế Độ Hiển Thị',
+    logoutButton: 'Đăng Xuất',
+  },
+};
+
+export default vi;
