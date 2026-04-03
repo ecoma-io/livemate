@@ -13,6 +13,9 @@ export default defineConfig(() => ({
   server: {
     port: 18180,
     host: '0.0.0.0',
+    fs: {
+      allow: ['../..'],
+    },
     proxy: {
       '/ffmpeg': {
         target: 'https://unpkg.com',
