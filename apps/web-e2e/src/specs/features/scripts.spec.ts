@@ -113,6 +113,49 @@ test.describe('Script Management', () => {
     await expect(dialog.getByText('5/24')).toBeVisible();
   });
 
+  test('submit button is disabled while create request is in-flight', async ({
+    page,
+  }) => {
+    await page.goto('/scripts');
+    await clickAddScript(page);
+
+    const dialog = page
+      .locator('.p-dialog')
+      .filter({ hasText: 'Create New Audio Group' });
+    await dialog.locator('#script-name').fill('Loading Test');
+
+    // Intercept the POST request and delay it so we can observe the loading state
+    let resolveRequest!: () => void;
+    await page.route('**/api/scripts', async (route) => {
+      if (route.request().method() === 'POST') {
+        await new Promise<void>((resolve) => {
+          resolveRequest = resolve;
+        });
+        await route.continue();
+      } else {
+        await route.continue();
+      }
+    });
+
+    // Click submit — request is now pending
+    await dialog.getByRole('button', { name: 'Create Now' }).click();
+
+    // Button must be disabled (loading) while the request is in-flight
+    await expect(
+      dialog.getByRole('button', { name: 'Create Now' }),
+    ).toBeDisabled();
+
+    // Name input must also be disabled to prevent edits during submission
+    await expect(dialog.locator('#script-name')).toBeDisabled();
+
+    // Unblock the request so the dialog can close cleanly
+    resolveRequest();
+    await expect(dialog).toBeHidden();
+
+    // Track the created script for cleanup
+    await tracker.trackScriptByName('Loading Test');
+  });
+
   test('creates a new script via dialog', async ({ page }) => {
     await page.goto('/scripts');
     await createScriptViaUI(page, 'E2E New Script');
@@ -533,7 +576,11 @@ test.describe('Script Management', () => {
     page,
   }) => {
     const script = await tracker.createScript('Status Update');
-    const file = await uploadTrack(script.id, 'status.mp3', generateTestMp3(20));
+    const file = await uploadTrack(
+      script.id,
+      'status.mp3',
+      generateTestMp3(20),
+    );
 
     await page.goto('/scripts');
 
@@ -562,7 +609,11 @@ test.describe('Script Management', () => {
 
   test('delete variant with confirmation', async ({ page }) => {
     const script = await tracker.createScript('Delete Variant');
-    const file = await uploadTrack(script.id, 'delvar.mp3', generateTestMp3(20));
+    const file = await uploadTrack(
+      script.id,
+      'delvar.mp3',
+      generateTestMp3(20),
+    );
     await uploadVariant(file.id, 1.1, generateTestMp3(15));
 
     await page.goto('/scripts');

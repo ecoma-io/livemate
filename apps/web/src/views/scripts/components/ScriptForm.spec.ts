@@ -174,6 +174,112 @@ describe('ScriptForm', () => {
     expect(mockCreateScript).not.toHaveBeenCalled();
   });
 
+  describe('loading state — create mode', () => {
+    it('disables submit button while create request is in-flight', async () => {
+      let resolveCreate!: (val: {
+        id: string;
+        name: string;
+        color: string;
+        sortOrder: number;
+        tracks: never[];
+      }) => void;
+      mockCreateScript.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveCreate = resolve;
+          }),
+      );
+
+      const wrapper = mountForm(true);
+      const input = wrapper.find('#script-name');
+      await input.setValue('Loading Test');
+
+      // Trigger submit — isSubmitting becomes true before the awaited API call
+      input.trigger('keyup.enter');
+      await wrapper.vm.$nextTick();
+
+      const createBtn = wrapper
+        .findAll('button')
+        .find((b) => b.text().includes('Create Now'));
+      expect(createBtn?.element.disabled).toBe(true);
+
+      // Unblock and verify loading resets
+      resolveCreate({
+        id: 's1',
+        name: 'Loading Test',
+        color: '#8b5cf6',
+        sortOrder: 0,
+        tracks: [],
+      });
+      await flushPromises();
+      expect(createBtn?.element.disabled).toBe(false);
+    });
+
+    it('disables name input while create request is in-flight', async () => {
+      let resolveCreate!: (val: {
+        id: string;
+        name: string;
+        color: string;
+        sortOrder: number;
+        tracks: never[];
+      }) => void;
+      mockCreateScript.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveCreate = resolve;
+          }),
+      );
+
+      const wrapper = mountForm(true);
+      const input = wrapper.find('#script-name');
+      await input.setValue('Loading Test');
+
+      input.trigger('keyup.enter');
+      await wrapper.vm.$nextTick();
+
+      expect((input.element as HTMLInputElement).disabled).toBe(true);
+
+      resolveCreate({
+        id: 's1',
+        name: 'Loading Test',
+        color: '#8b5cf6',
+        sortOrder: 0,
+        tracks: [],
+      });
+      await flushPromises();
+      expect((input.element as HTMLInputElement).disabled).toBe(false);
+    });
+
+    it('prevents double submission on rapid triggers', async () => {
+      const wrapper = mountForm(true);
+      const input = wrapper.find('#script-name');
+      await input.setValue('Double Click');
+
+      // Trigger twice without awaiting between
+      input.trigger('keyup.enter');
+      input.trigger('keyup.enter');
+      await flushPromises();
+
+      expect(mockCreateScript).toHaveBeenCalledTimes(1);
+    });
+
+    it('resets loading state after create error', async () => {
+      mockCreateScript.mockRejectedValueOnce(new Error('Network error'));
+
+      const wrapper = mountForm(true);
+      const input = wrapper.find('#script-name');
+      await input.setValue('Error Script');
+
+      input.trigger('keyup.enter');
+      await flushPromises();
+
+      const createBtn = wrapper
+        .findAll('button')
+        .find((b) => b.text().includes('Create Now'));
+      expect(createBtn?.element.disabled).toBe(false);
+    });
+  });
+
   describe('rename mode', () => {
     it('pre-fills name input with initialName', async () => {
       const wrapper = mountRenameForm(true, 's1', 'Old Name');
@@ -245,6 +351,75 @@ describe('ScriptForm', () => {
       await input.trigger('keyup.enter');
       await flushPromises();
       expect(mockUpdateScript).not.toHaveBeenCalled();
+    });
+
+    it('disables submit button while rename request is in-flight', async () => {
+      let resolveUpdate!: (val: {
+        id: string;
+        name: string;
+        color: string;
+        sortOrder: number;
+        tracks: never[];
+      }) => void;
+      mockUpdateScript.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveUpdate = resolve;
+          }),
+      );
+
+      const wrapper = mountRenameForm(true, 's1', 'Old Name');
+      await wrapper.vm.$nextTick();
+      const input = wrapper.find('#script-name');
+      await input.setValue('New Name');
+
+      input.trigger('keyup.enter');
+      await wrapper.vm.$nextTick();
+
+      const saveBtn = wrapper
+        .findAll('button')
+        .find((b) => b.text().includes('Save'));
+      expect(saveBtn?.element.disabled).toBe(true);
+
+      resolveUpdate({
+        id: 's1',
+        name: 'New Name',
+        color: '#6b7280',
+        sortOrder: 0,
+        tracks: [],
+      });
+      await flushPromises();
+      expect(saveBtn?.element.disabled).toBe(false);
+    });
+
+    it('prevents double submission in rename mode', async () => {
+      const wrapper = mountRenameForm(true, 's1', 'Old Name');
+      await wrapper.vm.$nextTick();
+      const input = wrapper.find('#script-name');
+      await input.setValue('New Name');
+
+      input.trigger('keyup.enter');
+      input.trigger('keyup.enter');
+      await flushPromises();
+
+      expect(mockUpdateScript).toHaveBeenCalledTimes(1);
+    });
+
+    it('resets loading state after rename error', async () => {
+      mockUpdateScript.mockRejectedValueOnce(new Error('Server error'));
+
+      const wrapper = mountRenameForm(true, 's1', 'Old Name');
+      await wrapper.vm.$nextTick();
+      const input = wrapper.find('#script-name');
+      await input.setValue('New Name');
+
+      input.trigger('keyup.enter');
+      await flushPromises();
+
+      const saveBtn = wrapper
+        .findAll('button')
+        .find((b) => b.text().includes('Save'));
+      expect(saveBtn?.element.disabled).toBe(false);
     });
   });
 });

@@ -15,13 +15,17 @@ const props = defineProps<{
   scriptId?: string;
   initialName?: string;
 }>();
-const emit = defineEmits<{ 'update:visible': [value: boolean]; scriptCreated: [id: string] }>();
+const emit = defineEmits<{
+  'update:visible': [value: boolean];
+  scriptCreated: [id: string];
+}>();
 
 const store = useScriptsStore();
 const toast = useToast();
 const { t } = useI18n();
 
 const newScriptName = ref('');
+const isSubmitting = ref(false);
 
 const dialogTitle = computed(() =>
   props.mode === 'rename'
@@ -53,9 +57,14 @@ function onHide() {
 async function submitForm() {
   if (!newScriptName.value.trim()) return;
   if (newScriptName.value.trim().length > 24) return;
+  if (isSubmitting.value) return;
+
+  isSubmitting.value = true;
   if (props.mode === 'rename') {
     try {
-      await store.updateScript(props.scriptId!, { name: newScriptName.value.trim() });
+      await store.updateScript(props.scriptId!, {
+        name: newScriptName.value.trim(),
+      });
       toast.add({
         severity: 'success',
         summary: t('soundboardForm.toast.renameSuccess'),
@@ -69,6 +78,8 @@ async function submitForm() {
         detail: (e as Error).message,
         life: 3000,
       });
+    } finally {
+      isSubmitting.value = false;
     }
   } else {
     try {
@@ -87,6 +98,8 @@ async function submitForm() {
         detail: (e as Error).message,
         life: 3000,
       });
+    } finally {
+      isSubmitting.value = false;
     }
   }
 }
@@ -110,15 +123,13 @@ async function submitForm() {
           class="w-full"
           autocomplete="off"
           :maxlength="24"
+          :disabled="isSubmitting"
           @keyup.enter="submitForm"
         />
         <label for="script-name">{{ t('soundboardForm.nameLabel') }}</label>
       </FloatLabel>
       <div class="flex justify-between text-xs text-surface-400">
-        <span
-          v-if="newScriptName.trim().length > 24"
-          class="text-red-500"
-        >{{
+        <span v-if="newScriptName.trim().length > 24" class="text-red-500">{{
           t('soundboardForm.nameTooLong')
         }}</span>
         <span v-else />
@@ -128,7 +139,12 @@ async function submitForm() {
       <Button
         :label="submitLabel"
         icon="pi pi-check"
-        :disabled="!newScriptName.trim() || newScriptName.trim().length > 24"
+        :loading="isSubmitting"
+        :disabled="
+          !newScriptName.trim() ||
+          newScriptName.trim().length > 24 ||
+          isSubmitting
+        "
         class="w-full font-bold rounded-xl"
         @click="submitForm"
       />
