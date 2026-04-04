@@ -59,6 +59,17 @@ function getVariantId(file: TrackData, speed: number): string | null {
   return file.variants.find((v) => v.speed === speed)?.id ?? null;
 }
 
+function getVariantDuration(file: TrackData, speed: number): number | null {
+  const d = file.variants.find((v) => v.speed === speed)?.duration;
+  return d != null && d > 0 ? d : null;
+}
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 function getVariantUrl(file: TrackData, speed: number): string | null {
   const variant = file.variants.find((v) => v.speed === speed);
   if (!variant) return null;
@@ -158,7 +169,8 @@ function handleInputChange(e: Event) {
                 <span
                   class="font-bold text-lg text-surface-900 dark:text-white truncate flex-1 min-w-0 select-none cursor-pointer"
                   @click="emit('toggleExpand')"
-                >{{ script.name }}</span>
+                  >{{ script.name }}</span
+                >
                 <button
                   type="button"
                   class="w-7 h-7 flex items-center justify-center text-surface-400 hover:text-surface-700 dark:hover:text-surface-200 transition-all shrink-0"
@@ -216,9 +228,7 @@ function handleInputChange(e: Event) {
                 @click="colorDialogVisible = true"
               />
               <Button
-                v-if="
-                  missingVariants.length > 0 && script.tracks.length > 0
-                "
+                v-if="missingVariants.length > 0 && script.tracks.length > 0"
                 v-tooltip.bottom="t('audioGroupCard.menu.renderAll')"
                 :label="t('audioGroupCard.menu.renderAll')"
                 :pt="{ label: { class: 'hidden sm:inline' } }"
@@ -268,7 +278,7 @@ function handleInputChange(e: Event) {
                   @blur="commitFileName"
                   @keydown.enter.prevent="commitFileName"
                   @keydown.escape.prevent="cancelEditFileName"
-                >
+                />
                 <button
                   v-else
                   type="button"
@@ -291,7 +301,7 @@ function handleInputChange(e: Event) {
                     ? 'border-b border-surface-100 dark:border-surface-700/30'
                     : '',
                   RENDER_SPEEDS.includes(spd.value) &&
-                    !hasVariant(file, spd.value)
+                  !hasVariant(file, spd.value)
                     ? 'bg-amber-50/60 dark:bg-amber-900/10'
                     : '',
                 ]"
@@ -305,11 +315,12 @@ function handleInputChange(e: Event) {
                         ? 'text-primary-500 dark:text-primary-400'
                         : 'text-surface-500 dark:text-surface-400'
                     "
-                  >{{ spd.label }}</span>
+                    >{{ spd.label }}</span
+                  >
                   <i
                     v-if="
                       RENDER_SPEEDS.includes(spd.value) &&
-                        !hasVariant(file, spd.value)
+                      !hasVariant(file, spd.value)
                     "
                     class="pi pi-exclamation-triangle text-[10px] text-amber-500 animate-pulse"
                   />
@@ -343,14 +354,25 @@ function handleInputChange(e: Event) {
                 </button>
 
                 <!-- Status text -->
-                <span
-                  v-if="hasVariant(file, spd.value)"
-                  class="flex-1 text-xs text-green-500 dark:text-green-400"
-                >{{ t('audioGroupCard.statusReady') }}</span>
+                <span v-if="hasVariant(file, spd.value)" class="flex-1 text-xs"
+                  ><span class="text-green-500 dark:text-green-400">{{
+                    t('audioGroupCard.statusReady')
+                  }}</span
+                  ><span
+                    v-if="getVariantDuration(file, spd.value) != null"
+                    class="ml-1 text-surface-400 dark:text-surface-500"
+                    data-testid="variant-duration"
+                    >·
+                    {{
+                      formatDuration(getVariantDuration(file, spd.value)!)
+                    }}</span
+                  ></span
+                >
                 <span
                   v-else
                   class="flex-1 text-xs text-amber-500 dark:text-amber-400 font-medium"
-                >{{ t('audioGroupCard.statusMissing') }}</span>
+                  >{{ t('audioGroupCard.statusMissing') }}</span
+                >
 
                 <!-- 1.0x: delete entire track -->
                 <Button
@@ -368,7 +390,9 @@ function handleInputChange(e: Event) {
                   <Button
                     v-if="hasVariant(file, spd.value)"
                     v-tooltip.top="
-                      t('audioGroupCard.deleteVariantTooltip', { speed: spd.label })
+                      t('audioGroupCard.deleteVariantTooltip', {
+                        speed: spd.label,
+                      })
                     "
                     icon="pi pi-trash"
                     size="small"
@@ -436,14 +460,10 @@ function handleInputChange(e: Event) {
             accept="audio/*,.mp3,.m4a,.wav,.aac,.ogg,.flac,.wma,.opus,.webm,.caf"
             multiple
             @change="handleInputChange"
-          >
+          />
 
           <!-- Hidden audio element for mini player -->
-          <audio
-            ref="audioEl"
-            class="hidden"
-            @ended="handleAudioEnded"
-          />
+          <audio ref="audioEl" class="hidden" @ended="handleAudioEnded" />
         </div>
       </template>
     </Card>
@@ -451,7 +471,8 @@ function handleInputChange(e: Event) {
       v-if="script.tracks.length > 0"
       data-testid="variant-count-badge"
       class="absolute -top-2 -right-2 min-w-4.5 h-4.5 rounded-full bg-primary-500 text-white text-[10px] font-bold flex items-center justify-center px-0.5 leading-none pointer-events-none"
-    >{{ script.tracks.length }}</span>
+      >{{ script.tracks.length }}</span
+    >
   </div>
 
   <ScriptForm

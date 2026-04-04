@@ -46,13 +46,12 @@ export const variants = sqliteTable(
     contentHash: text('content_hash').notNull(),
     fileSize: integer('file_size').notNull(),
     mimeType: text('mime_type').notNull(),
+    duration: real('duration'),
     createdAt: text('created_at')
       .notNull()
       .default(sql`(datetime('now'))`),
   },
-  (table) => [
-    uniqueIndex('unique_track_speed').on(table.trackId, table.speed),
-  ],
+  (table) => [uniqueIndex('unique_track_speed').on(table.trackId, table.speed)],
 );
 
 export const scriptsRelations = relations(scripts, ({ many }) => ({

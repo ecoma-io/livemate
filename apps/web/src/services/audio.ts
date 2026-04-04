@@ -65,3 +65,50 @@ class AudioService {
 }
 
 export const audioService = new AudioService();
+
+/**
+ * Extract the duration (in seconds) from a Blob/File using the browser's
+ * HTMLAudioElement. Resolves with null if the duration cannot be determined.
+ */
+export function getDuration(blob: Blob): Promise<number | null> {
+  return new Promise((resolve) => {
+    try {
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio();
+
+      const cleanup = () => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch {
+          /* no-op */
+        }
+      };
+
+      audio.addEventListener(
+        'loadedmetadata',
+        () => {
+          const d =
+            isFinite(audio.duration) && audio.duration > 0
+              ? audio.duration
+              : null;
+          cleanup();
+          resolve(d);
+        },
+        { once: true },
+      );
+
+      audio.addEventListener(
+        'error',
+        () => {
+          cleanup();
+          resolve(null);
+        },
+        { once: true },
+      );
+
+      audio.src = url;
+    } catch {
+      resolve(null);
+    }
+  });
+}

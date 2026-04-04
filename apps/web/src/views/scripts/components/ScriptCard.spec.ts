@@ -28,6 +28,7 @@ describe('ScriptCard', () => {
             contentHash: 'abc',
             fileSize: 1000,
             mimeType: 'audio/mpeg',
+            duration: 65.0,
           },
           {
             id: 'v2',
@@ -36,6 +37,7 @@ describe('ScriptCard', () => {
             contentHash: 'def',
             fileSize: 800,
             mimeType: 'audio/mpeg',
+            duration: null,
           },
         ],
       },
@@ -552,5 +554,38 @@ describe('ScriptCard', () => {
     await colorDialog.vm.$emit('colorChange', 's1', '#3b82f6');
     expect(wrapper.emitted('colorChange')).toBeTruthy();
     expect(wrapper.emitted('colorChange')![0]).toEqual(['s1', '#3b82f6']);
+  });
+
+  it('shows formatted duration for variant with duration', () => {
+    const wrapper = mountCard();
+    const durationSpan = wrapper.find('[data-testid="variant-duration"]');
+    expect(durationSpan.exists()).toBe(true);
+    expect(durationSpan.text()).toContain('1:05');
+  });
+
+  it('does not show duration span for variant with null duration', () => {
+    const noDurationScript = {
+      ...mockScript,
+      tracks: [
+        {
+          ...mockScript.tracks[0],
+          variants: [
+            {
+              id: 'v1',
+              trackId: 'f1',
+              speed: 1.0,
+              contentHash: 'abc',
+              fileSize: 1000,
+              mimeType: 'audio/mpeg',
+              duration: null,
+            },
+          ],
+        },
+      ],
+    };
+    const wrapper = mountCard(noDurationScript);
+    expect(wrapper.find('[data-testid="variant-duration"]').exists()).toBe(
+      false,
+    );
   });
 });

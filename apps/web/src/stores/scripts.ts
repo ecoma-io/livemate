@@ -6,6 +6,7 @@ import {
   type TrackData,
   type VariantData,
 } from '../services/api';
+import { getDuration } from '../services/audio';
 
 export type { ScriptData, TrackData, VariantData };
 
@@ -47,9 +48,7 @@ export const useScriptsStore = defineStore('scripts', () => {
     scripts.value = scripts.value.filter((g) => g.id !== id);
   }
 
-  async function reorderScripts(
-    items: { id: string; sortOrder: number }[],
-  ) {
+  async function reorderScripts(items: { id: string; sortOrder: number }[]) {
     await api.reorderScripts(items);
     for (const item of items) {
       const script = scripts.value.find((g) => g.id === item.id);
@@ -59,7 +58,8 @@ export const useScriptsStore = defineStore('scripts', () => {
   }
 
   async function uploadTrack(scriptId: string, file: File) {
-    const result = await api.uploadTrack(scriptId, file);
+    const duration = await getDuration(file);
+    const result = await api.uploadTrack(scriptId, file, duration);
     const script = scripts.value.find((g) => g.id === scriptId);
     if (script) script.tracks.push(result);
     return result;
@@ -84,18 +84,13 @@ export const useScriptsStore = defineStore('scripts', () => {
     return updated;
   }
 
-  async function uploadVariant(
-    trackId: string,
-    speed: number,
-    blob: Blob,
-  ) {
-    const variant = await api.uploadVariant(trackId, speed, blob);
+  async function uploadVariant(trackId: string, speed: number, blob: Blob) {
+    const duration = await getDuration(blob);
+    const variant = await api.uploadVariant(trackId, speed, blob, duration);
     for (const script of scripts.value) {
       const track = script.tracks.find((f) => f.id === trackId);
       if (track) {
-        track.variants = track.variants.filter(
-          (v) => v.speed !== speed,
-        );
+        track.variants = track.variants.filter((v) => v.speed !== speed);
         track.variants.push(variant);
         break;
       }
@@ -107,9 +102,7 @@ export const useScriptsStore = defineStore('scripts', () => {
     await api.deleteVariant(variantId);
     for (const script of scripts.value) {
       for (const track of script.tracks) {
-        track.variants = track.variants.filter(
-          (v) => v.id !== variantId,
-        );
+        track.variants = track.variants.filter((v) => v.id !== variantId);
       }
     }
   }

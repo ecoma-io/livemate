@@ -25,7 +25,7 @@ describe('tracks router', () => {
         },
         variants: {
           findFirst: vi.fn(),
-        }
+        },
       },
       delete: vi.fn().mockReturnThis(),
       where: vi.fn().mockResolvedValue(true),
@@ -94,6 +94,26 @@ describe('tracks router', () => {
     });
     expect(res.status).toBe(201);
     expect(mockDb.insert).toHaveBeenCalled();
+    const data = await res.json();
+    expect(data.duration).toBeNull();
+  });
+
+  it('POST /tracks/:trackId/variants should persist duration when provided', async () => {
+    mockDb.query.tracks.findFirst.mockResolvedValue({ id: 'track_1' });
+    mockDb.query.variants.findFirst.mockResolvedValue(null);
+    const formData = new FormData();
+    const mockBlob = new Blob(['test'], { type: 'audio/mp3' });
+    formData.append('file', mockBlob, 'test.mp3');
+    formData.append('speed', '1.5');
+    formData.append('duration', '65.0');
+
+    const res = await app.request('/tracks/track_1/variants', {
+      method: 'POST',
+      body: formData,
+    });
+    expect(res.status).toBe(201);
+    const data = await res.json();
+    expect(data.duration).toBe(65.0);
   });
 
   it('POST /tracks/:trackId/variants should return 400 if speed is invalid', async () => {
@@ -114,7 +134,9 @@ describe('tracks router', () => {
   it('POST /tracks/:trackId/variants should return 400 if file too large', async () => {
     mockDb.query.tracks.findFirst.mockResolvedValue({ id: 'track_1' });
     const formData = new FormData();
-    const bigBlob = new Blob([new Uint8Array(3 * 1024 * 1024)], { type: 'audio/mp3' });
+    const bigBlob = new Blob([new Uint8Array(3 * 1024 * 1024)], {
+      type: 'audio/mp3',
+    });
     formData.append('file', bigBlob, 'big.mp3');
     formData.append('speed', '1.0');
     const res = await app.request('/tracks/track_1/variants', {
@@ -135,7 +157,10 @@ describe('tracks router', () => {
           { and: (a: any, b: any) => a && b, eq: (a: any, b: any) => a === b },
         );
       }
-      return Promise.resolve({ id: 'existing_v', r2Key: 'audio/track_1/1.5.mp3' });
+      return Promise.resolve({
+        id: 'existing_v',
+        r2Key: 'audio/track_1/1.5.mp3',
+      });
     });
     const formData = new FormData();
     const mockBlob = new Blob(['test'], { type: 'audio/mp3' });
@@ -183,7 +208,10 @@ describe('variants router', () => {
   });
 
   it('DELETE /variants/:id should delete variant', async () => {
-    mockDb.query.variants.findFirst.mockResolvedValue({ id: '1', r2Key: 'test' });
+    mockDb.query.variants.findFirst.mockResolvedValue({
+      id: '1',
+      r2Key: 'test',
+    });
     const res = await app.request('/variants/1', {
       method: 'DELETE',
     });

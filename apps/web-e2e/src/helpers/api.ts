@@ -27,6 +27,7 @@ export interface VariantData {
   contentHash: string;
   fileSize: number;
   mimeType: string;
+  duration?: number | null;
 }
 
 async function fetchApi<T = unknown>(
@@ -72,10 +73,12 @@ export async function uploadTrack(
   fileName: string,
   audioBuffer: Buffer,
   mimeType = 'audio/mpeg',
+  duration?: number | null,
 ): Promise<TrackData> {
   const blob = new Blob([new Uint8Array(audioBuffer)], { type: mimeType });
   const formData = new FormData();
   formData.append('file', blob, fileName);
+  if (duration != null) formData.append('duration', duration.toString());
   return fetchApi<TrackData>(`/scripts/${scriptId}/tracks`, {
     method: 'POST',
     body: formData,
@@ -87,11 +90,13 @@ export async function uploadVariant(
   fileId: string,
   speed: number,
   audioBuffer: Buffer,
+  duration?: number | null,
 ): Promise<VariantData> {
   const blob = new Blob([new Uint8Array(audioBuffer)], { type: 'audio/mpeg' });
   const formData = new FormData();
   formData.append('file', blob, `variant_${speed}.mp3`);
   formData.append('speed', speed.toString());
+  if (duration != null) formData.append('duration', duration.toString());
   return fetchApi<VariantData>(`/tracks/${fileId}/variants`, {
     method: 'POST',
     body: formData,

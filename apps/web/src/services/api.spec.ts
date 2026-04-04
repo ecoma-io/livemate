@@ -148,6 +148,36 @@ describe('api', () => {
       expect(callBody.get('file')).toBeInstanceOf(File);
       expect(result).toEqual(fileData);
     });
+
+    it('appends duration to FormData when provided', async () => {
+      const spy = mockFetch({
+        id: 'f1',
+        scriptId: 's1',
+        name: 'test.mp3',
+        variants: [],
+      });
+      const file = new File(['audio-data'], 'test.mp3', { type: 'audio/mpeg' });
+
+      await api.uploadTrack('s1', file, 42.5);
+
+      const callBody = spy.mock.calls[0][1]?.body as FormData;
+      expect(callBody.get('duration')).toBe('42.5');
+    });
+
+    it('omits duration from FormData when null', async () => {
+      const spy = mockFetch({
+        id: 'f1',
+        scriptId: 's1',
+        name: 'test.mp3',
+        variants: [],
+      });
+      const file = new File(['audio-data'], 'test.mp3', { type: 'audio/mpeg' });
+
+      await api.uploadTrack('s1', file, null);
+
+      const callBody = spy.mock.calls[0][1]?.body as FormData;
+      expect(callBody.get('duration')).toBeNull();
+    });
   });
 
   describe('deleteTrack', () => {
@@ -171,6 +201,7 @@ describe('api', () => {
         contentHash: 'abc',
         fileSize: 500,
         mimeType: 'audio/mpeg',
+        duration: null,
       };
       const spy = mockFetch(variant);
       const blob = new Blob(['data'], { type: 'audio/mpeg' });
@@ -186,6 +217,42 @@ describe('api', () => {
       const callBody = spy.mock.calls[0][1]?.body as FormData;
       expect(callBody.get('speed')).toBe('1.2');
       expect(result).toEqual(variant);
+    });
+
+    it('appends duration to FormData when provided', async () => {
+      const spy = mockFetch({
+        id: 'v1',
+        trackId: 'f1',
+        speed: 1.2,
+        contentHash: 'abc',
+        fileSize: 500,
+        mimeType: 'audio/mpeg',
+        duration: 65.0,
+      });
+      const blob = new Blob(['data'], { type: 'audio/mpeg' });
+
+      await api.uploadVariant('f1', 1.2, blob, 65.0);
+
+      const callBody = spy.mock.calls[0][1]?.body as FormData;
+      expect(callBody.get('duration')).toBe('65');
+    });
+
+    it('omits duration from FormData when null', async () => {
+      const spy = mockFetch({
+        id: 'v1',
+        trackId: 'f1',
+        speed: 1.2,
+        contentHash: 'abc',
+        fileSize: 500,
+        mimeType: 'audio/mpeg',
+        duration: null,
+      });
+      const blob = new Blob(['data'], { type: 'audio/mpeg' });
+
+      await api.uploadVariant('f1', 1.2, blob, null);
+
+      const callBody = spy.mock.calls[0][1]?.body as FormData;
+      expect(callBody.get('duration')).toBeNull();
     });
   });
 

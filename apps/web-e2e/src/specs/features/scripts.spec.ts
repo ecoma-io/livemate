@@ -237,7 +237,7 @@ test.describe('Script Management', () => {
 
     // Verify persists after reload
     await page.reload();
-    await expect(page.getByText('Renamed Script')).toBeVisible();
+    await expect(scriptCard(page, 'Renamed Script')).toBeVisible();
   });
 
   test('cannot rename script to name exceeding 24 characters', async ({
@@ -463,11 +463,13 @@ test.describe('Script Management', () => {
     await expect(uploadProgressDialog(page)).toBeVisible({ timeout: 5000 });
     await uploadPromise;
 
-    // Dialog should auto-close after success (reuse helper for clarity)
-    await waitForUploadComplete(page);
-
-    // Toast confirms success
-    await expectToast(page, 'uploaded');
+    // Dialog should auto-close and toast should confirm success.
+    // Run both concurrently: the toast has a short 2s life and may expire
+    // before the dialog close is detected if checked sequentially.
+    await Promise.all([
+      waitForUploadComplete(page),
+      expectToast(page, 'uploaded'),
+    ]);
   });
 
   test('upload dialog shows title and disappears on success', async ({
@@ -924,5 +926,50 @@ test.describe('Script Card Expand/Collapse and Warning Badge', () => {
     const card = scriptCard(page, 'No Badge Test');
     // All variants present — no indicator even when collapsed
     await expect(missingVariantsBadge(card)).not.toBeAttached();
+  });
+});
+
+// ─── Variant Duration Display ─────────────────────────────────────────────────
+
+test.describe('Variant Duration Display', () => {
+  const tracker = new TestScriptTracker();
+
+  test.afterEach(async () => {
+    await tracker.cleanup();
+  });
+
+  test('shows formatted duration for a variant uploaded with duration', async ({
+    page,
+  }) => {
+    const script = await tracker.createScript('Duration Display Test');
+    await uploadTrack(
+      script.id,
+      'clip.mp3',
+      generateTestMp3(10),
+      'audio/mpeg',
+      65.0,
+    );
+
+    await page.goto('/scripts');
+    const card = scriptCardById(page, script.id);
+    await toggleScriptCard(card);
+
+    await expect(card.getByTestId('variant-duration').first()).toBeVisible();
+    await expect(card.getByTestId('variant-duration').first()).toContainText(
+      '1:05',
+    );
+  });
+
+  test('does not show duration when variant has no duration', async ({
+    page,
+  }) => {
+    const script = await tracker.createScript('No Duration Test');
+    await uploadTrack(script.id, 'clip.mp3', generateTestMp3(10));
+
+    await page.goto('/scripts');
+    const card = scriptCardById(page, script.id);
+    await toggleScriptCard(card);
+
+    await expect(card.getByTestId('variant-duration')).not.toBeAttached();
   });
 });

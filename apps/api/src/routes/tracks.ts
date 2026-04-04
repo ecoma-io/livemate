@@ -67,7 +67,10 @@ trackApp.post('/:trackId/variants', async (c) => {
 
   if (!audioFile) return c.json({ error: 'File is required' }, 400);
   if (isNaN(speed) || !VALID_SPEEDS.includes(speed)) {
-    return c.json({ error: 'Speed must be 1.0, 1.1, 1.2, 1.3, 1.4, or 1.5' }, 400);
+    return c.json(
+      { error: 'Speed must be 1.0, 1.1, 1.2, 1.3, 1.4, or 1.5' },
+      400,
+    );
   }
 
   if (audioFile.size > MAX_FILE_SIZE) {
@@ -82,9 +85,7 @@ trackApp.post('/:trackId/variants', async (c) => {
 
   if (existing) {
     await c.env.BUCKET.delete(existing.r2Key);
-    await db
-      .delete(variants)
-      .where(eq(variants.id, existing.id));
+    await db.delete(variants).where(eq(variants.id, existing.id));
   }
 
   const arrayBuffer = await audioFile.arrayBuffer();
@@ -95,6 +96,9 @@ trackApp.post('/:trackId/variants', async (c) => {
 
   const variantId = crypto.randomUUID();
   const r2Key = `audio/${trackId}/${speed}.mp3`;
+
+  const durationRaw = parseFloat(formData.get('duration') as string);
+  const duration = isNaN(durationRaw) ? null : durationRaw;
 
   await c.env.BUCKET.put(r2Key, arrayBuffer, {
     httpMetadata: { contentType: 'audio/mpeg' },
@@ -108,6 +112,7 @@ trackApp.post('/:trackId/variants', async (c) => {
     contentHash,
     fileSize: audioFile.size,
     mimeType: 'audio/mpeg',
+    duration,
   });
 
   return c.json(
@@ -118,6 +123,7 @@ trackApp.post('/:trackId/variants', async (c) => {
       contentHash,
       fileSize: audioFile.size,
       mimeType: 'audio/mpeg',
+      duration,
     },
     201,
   );

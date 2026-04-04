@@ -294,4 +294,33 @@ describe('scripts router', () => {
     const data = await res.json();
     expect(data.variants[0].mimeType).toBe('audio/mpeg');
   });
+
+  it('POST /scripts/:scriptId/tracks should persist duration when provided', async () => {
+    mockDb.query.scripts.findFirst.mockResolvedValue({ id: '1', name: 'Test' });
+    const formData = new FormData();
+    const blob = new Blob(['audio-data'], { type: 'audio/mpeg' });
+    formData.append('file', blob, 'test.mp3');
+    formData.append('duration', '42.5');
+    const res = await app.request('/scripts/1/tracks', {
+      method: 'POST',
+      body: formData,
+    });
+    expect(res.status).toBe(201);
+    const data = await res.json();
+    expect(data.variants[0].duration).toBe(42.5);
+  });
+
+  it('POST /scripts/:scriptId/tracks should return duration null when not provided', async () => {
+    mockDb.query.scripts.findFirst.mockResolvedValue({ id: '1', name: 'Test' });
+    const formData = new FormData();
+    const blob = new Blob(['audio-data'], { type: 'audio/mpeg' });
+    formData.append('file', blob, 'test.mp3');
+    const res = await app.request('/scripts/1/tracks', {
+      method: 'POST',
+      body: formData,
+    });
+    expect(res.status).toBe(201);
+    const data = await res.json();
+    expect(data.variants[0].duration).toBeNull();
+  });
 });

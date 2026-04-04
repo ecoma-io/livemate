@@ -13,12 +13,21 @@ vi.mock('../services/ffmpeg', () => ({
   },
 }));
 
+vi.mock('../services/audio', () => ({
+  getDuration: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock('../services/api', () => ({
   api: {
     audioUrl: (id: string) => `/api/audio/${id}`,
     getScripts: vi.fn().mockResolvedValue([]),
     uploadVariant: vi.fn().mockResolvedValue({
-      id: 'v-new', trackId: 'f1', speed: 1.2, contentHash: 'xyz', fileSize: 500, mimeType: 'audio/mpeg',
+      id: 'v-new',
+      trackId: 'f1',
+      speed: 1.2,
+      contentHash: 'xyz',
+      fileSize: 500,
+      mimeType: 'audio/mpeg',
     }),
   },
 }));
@@ -58,7 +67,14 @@ const mockFile = (id = 'f1'): TrackData => ({
   scriptId: 's1',
   name: 'test.mp3',
   variants: [
-    { id: `v-${id}`, trackId: id, speed: 1.0, contentHash: 'abc', fileSize: 1000, mimeType: 'audio/mpeg' },
+    {
+      id: `v-${id}`,
+      trackId: id,
+      speed: 1.0,
+      contentHash: 'abc',
+      fileSize: 1000,
+      mimeType: 'audio/mpeg',
+    },
   ],
 });
 
@@ -113,7 +129,9 @@ describe('useAudioRenderer', () => {
   it('renderVariant goes through full flow and increments sessionCompleted', async () => {
     vi.mocked(ffmpegService).isLoaded = false;
     vi.mocked(ffmpegService.load).mockResolvedValue(undefined);
-    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(new Blob(['rendered']));
+    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(
+      new Blob(['rendered']),
+    );
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       blob: () => Promise.resolve(new Blob(['original-audio'])),
     } as Response);
@@ -130,7 +148,9 @@ describe('useAudioRenderer', () => {
 
   it('renderVariant does not emit success toast', async () => {
     vi.mocked(ffmpegService).isLoaded = true;
-    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(new Blob(['rendered']));
+    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(
+      new Blob(['rendered']),
+    );
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       blob: () => Promise.resolve(new Blob(['original-audio'])),
     } as Response);
@@ -172,7 +192,14 @@ describe('useAudioRenderer', () => {
       scriptId: 's1',
       name: 'test.mp3',
       variants: [
-        { id: 'v1', trackId: 'f1', speed: 1.5, contentHash: 'abc', fileSize: 1000, mimeType: 'audio/mpeg' },
+        {
+          id: 'v1',
+          trackId: 'f1',
+          speed: 1.5,
+          contentHash: 'abc',
+          fileSize: 1000,
+          mimeType: 'audio/mpeg',
+        },
       ],
     };
 
@@ -195,7 +222,9 @@ describe('useAudioRenderer', () => {
 
   it('queueRenderVariant sets sessionTotal=1 and sessionCompleted=1 on success', async () => {
     vi.mocked(ffmpegService).isLoaded = true;
-    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(new Blob(['rendered']));
+    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(
+      new Blob(['rendered']),
+    );
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       blob: () => Promise.resolve(new Blob(['original-audio'])),
     } as Response);
@@ -215,7 +244,9 @@ describe('useAudioRenderer', () => {
 
   it('batch mode: errors increment sessionErrorCount and do not block queue', async () => {
     vi.mocked(ffmpegService).isLoaded = true;
-    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(new Blob(['rendered']));
+    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(
+      new Blob(['rendered']),
+    );
     vi.spyOn(globalThis, 'fetch')
       .mockRejectedValueOnce(new Error('fail first'))
       .mockResolvedValue({
@@ -229,7 +260,14 @@ describe('useAudioRenderer', () => {
       scriptId: 's1',
       name: 'second.mp3',
       variants: [
-        { id: 'v2', trackId: 'f2', speed: 1.0, contentHash: 'def', fileSize: 1000, mimeType: 'audio/mpeg' },
+        {
+          id: 'v2',
+          trackId: 'f2',
+          speed: 1.0,
+          contentHash: 'def',
+          fileSize: 1000,
+          mimeType: 'audio/mpeg',
+        },
       ],
     };
 
@@ -271,7 +309,9 @@ describe('useAudioRenderer', () => {
 
   it('new queueRenderVariant call after session resets counters', async () => {
     vi.mocked(ffmpegService).isLoaded = true;
-    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(new Blob(['rendered']));
+    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(
+      new Blob(['rendered']),
+    );
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       blob: () => Promise.resolve(new Blob(['original-audio'])),
     } as Response);
@@ -298,7 +338,9 @@ describe('useAudioRenderer', () => {
 
   it('skips ffmpeg load when already loaded', async () => {
     vi.mocked(ffmpegService).isLoaded = true;
-    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(new Blob(['rendered']));
+    vi.mocked(ffmpegService.changeSpeed).mockResolvedValue(
+      new Blob(['rendered']),
+    );
     vi.spyOn(globalThis, 'fetch').mockResolvedValue({
       blob: () => Promise.resolve(new Blob(['original-audio'])),
     } as Response);
@@ -311,4 +353,3 @@ describe('useAudioRenderer', () => {
     expect(result.phase.value).toBe('done');
   });
 });
-

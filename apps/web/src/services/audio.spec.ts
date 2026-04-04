@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { audioService } from './audio';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { audioService, getDuration } from './audio';
 
 // Mock howler - Howl must be a class (constructor)
 vi.mock('howler', () => {
@@ -112,5 +112,86 @@ describe('audioService', () => {
     audioService.stop();
     // Calling stop again should be safe
     audioService.stop();
+  });
+});
+
+describe('getDuration', () => {
+  let listeners: Record<string, () => void>;
+  let mockDuration: number;
+  let revokeSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    listeners = {};
+    mockDuration = 0;
+
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
+    revokeSpy = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+    // Use a class so `new Audio()` works correctly
+    vi.stubGlobal(
+      'Audio',
+      class {
+        get duration() {
+          return mockDuration;
+        }
+        src = '';
+        addEventListener(event: string, cb: () => void) {
+          listeners[event] = cb;
+        }
+      },
+    );
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('resolves with duration from loadedmetadata', async () => {
+    mockDuration = 42.5;
+    const promise = getDuration(new Blob(['data']));
+    listeners['loadedmetadata']();
+    expect(await promise).toBe(42.5);
+  });
+
+  it('resolves with null on audio error', async () => {
+    mockDuration = NaN;
+    const promise = getDuration(new Blob(['data']));
+    listeners['error']();
+    expect(await promise).toBeNull();
+  });
+
+  it('resolves with null when duration is non-finite', async () => {
+    mockDuration = Infinity;
+    const promise = getDuration(new Blob(['data']));
+    listeners['loadedmetadata']();
+    expect(await promise).toBeNull();
+  });
+
+  it('resolves with null when duration is zero', async () => {
+    mockDuration = 0;
+    const promise = getDuration(new Blob(['data']));
+    listeners['loadedmetadata']();
+    expect(await promise).toBeNull();
+  });
+
+  it('resolves with null when Audio constructor throws', async () => {
+    vi.stubGlobal(
+      'Audio',
+      class {
+        constructor() {
+          throw new Error('Audio not supported');
+        }
+      },
+    );
+    expect(await getDuration(new Blob(['data']))).toBeNull();
+  });
+
+  it('revokes the object URL after loadedmetadata', async () => {
+    mockDuration = 10.0;
+    const promise = getDuration(new Blob(['data']));
+    listeners['loadedmetadata']();
+    await promise;
+    expect(revokeSpy).toHaveBeenCalledWith('blob:test');
   });
 });

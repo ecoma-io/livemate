@@ -17,13 +17,22 @@ vi.mock('../services/api', () => ({
   },
 }));
 
+// Mock the audio module so getDuration resolves immediately in tests
+vi.mock('../services/audio', () => ({
+  getDuration: vi.fn().mockResolvedValue(null),
+}));
+
 describe('useScriptsStore', () => {
   let apiMock: typeof import('../services/api').api;
+  let getDurationMock: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     setActivePinia(createPinia());
     apiMock = (await import('../services/api')).api as any;
+    getDurationMock = (await import('../services/audio'))
+      .getDuration as ReturnType<typeof vi.fn>;
     vi.clearAllMocks();
+    getDurationMock.mockResolvedValue(null);
   });
 
   it('fetchScripts loads scripts', async () => {
@@ -116,6 +125,28 @@ describe('useScriptsStore', () => {
     expect(store.scripts[0].tracks).toHaveLength(1);
   });
 
+  it('uploadTrack passes duration from getDuration to api', async () => {
+    getDurationMock.mockResolvedValue(42.5);
+    vi.mocked(apiMock.uploadTrack).mockResolvedValue({
+      id: 'f1',
+      scriptId: 'g1',
+      name: 'test.mp3',
+      variants: [],
+    });
+
+    const store = useScriptsStore();
+    store.scripts = [
+      { id: 'g1', name: 'Test', color: '#ff0000', sortOrder: 0, tracks: [] },
+    ];
+
+    await store.uploadTrack('g1', new File(['data'], 'test.mp3'));
+    expect(vi.mocked(apiMock.uploadTrack)).toHaveBeenCalledWith(
+      'g1',
+      expect.any(File),
+      42.5,
+    );
+  });
+
   it('deleteTrack removes track from all scripts', async () => {
     vi.mocked(apiMock.deleteTrack).mockResolvedValue(undefined);
 
@@ -126,9 +157,7 @@ describe('useScriptsStore', () => {
         name: 'Test',
         color: '#ff0000',
         sortOrder: 0,
-        tracks: [
-          { id: 'f1', scriptId: 'g1', name: 'test.mp3', variants: [] },
-        ],
+        tracks: [{ id: 'f1', scriptId: 'g1', name: 'test.mp3', variants: [] }],
       },
     ];
 
@@ -154,15 +183,46 @@ describe('useScriptsStore', () => {
         name: 'Test',
         color: '#ff0000',
         sortOrder: 0,
-        tracks: [
-          { id: 'f1', scriptId: 'g1', name: 'test.mp3', variants: [] },
-        ],
+        tracks: [{ id: 'f1', scriptId: 'g1', name: 'test.mp3', variants: [] }],
       },
     ];
 
     await store.uploadVariant('f1', 1.2, new Blob(['data']));
     expect(store.scripts[0].tracks[0].variants).toHaveLength(1);
     expect(store.scripts[0].tracks[0].variants[0].speed).toBe(1.2);
+  });
+
+  it('uploadVariant passes duration from getDuration to api', async () => {
+    getDurationMock.mockResolvedValue(65.0);
+    const mockVariant = {
+      id: 'var1',
+      trackId: 'f1',
+      speed: 1.2,
+      contentHash: 'abc',
+      fileSize: 500,
+      mimeType: 'audio/mpeg',
+      duration: 65.0,
+    };
+    vi.mocked(apiMock.uploadVariant).mockResolvedValue(mockVariant);
+
+    const store = useScriptsStore();
+    store.scripts = [
+      {
+        id: 'g1',
+        name: 'Test',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [{ id: 'f1', scriptId: 'g1', name: 'test.mp3', variants: [] }],
+      },
+    ];
+
+    await store.uploadVariant('f1', 1.2, new Blob(['data']));
+    expect(vi.mocked(apiMock.uploadVariant)).toHaveBeenCalledWith(
+      'f1',
+      1.2,
+      expect.any(Blob),
+      65.0,
+    );
   });
 
   it('reorderScripts updates sortOrder', async () => {
@@ -199,8 +259,22 @@ describe('useScriptsStore', () => {
             scriptId: 'g1',
             name: 'test.mp3',
             variants: [
-              { id: 'var1', trackId: 'f1', speed: 1.0, contentHash: 'abc', fileSize: 500, mimeType: 'audio/mpeg' },
-              { id: 'var2', trackId: 'f1', speed: 1.2, contentHash: 'def', fileSize: 600, mimeType: 'audio/mpeg' },
+              {
+                id: 'var1',
+                trackId: 'f1',
+                speed: 1.0,
+                contentHash: 'abc',
+                fileSize: 500,
+                mimeType: 'audio/mpeg',
+              },
+              {
+                id: 'var2',
+                trackId: 'f1',
+                speed: 1.2,
+                contentHash: 'def',
+                fileSize: 600,
+                mimeType: 'audio/mpeg',
+              },
             ],
           },
         ],
@@ -236,8 +310,22 @@ describe('useScriptsStore', () => {
             scriptId: 'g1',
             name: 'test.mp3',
             variants: [
-              { id: 'var1', trackId: 'f1', speed: 1.0, contentHash: 'abc', fileSize: 500, mimeType: 'audio/mpeg' },
-              { id: 'var2', trackId: 'f1', speed: 1.2, contentHash: 'old', fileSize: 600, mimeType: 'audio/mpeg' },
+              {
+                id: 'var1',
+                trackId: 'f1',
+                speed: 1.0,
+                contentHash: 'abc',
+                fileSize: 500,
+                mimeType: 'audio/mpeg',
+              },
+              {
+                id: 'var2',
+                trackId: 'f1',
+                speed: 1.2,
+                contentHash: 'old',
+                fileSize: 600,
+                mimeType: 'audio/mpeg',
+              },
             ],
           },
         ],

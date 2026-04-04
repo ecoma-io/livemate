@@ -12,6 +12,7 @@ vi.mock('../services/audio', () => ({
     }),
     stop: vi.fn(),
   },
+  getDuration: vi.fn().mockResolvedValue(null),
 }));
 
 const mockedAudioService = vi.mocked(audioService);

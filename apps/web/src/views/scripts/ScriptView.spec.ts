@@ -32,6 +32,10 @@ vi.mock('../../services/api', () => ({
   api: mockApi,
 }));
 
+vi.mock('../../services/audio', () => ({
+  getDuration: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock('../../services/ffmpeg', () => ({
   ffmpegService: {
     isLoaded: false,

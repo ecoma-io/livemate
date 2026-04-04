@@ -175,6 +175,9 @@ app.post('/:scriptId/tracks', async (c) => {
   const ext = file.name.split('.').pop() || 'mp3';
   const r2Key = `audio/${fileId}/1.0.${ext}`;
 
+  const durationRaw = parseFloat(formData.get('duration') as string);
+  const duration = isNaN(durationRaw) ? null : durationRaw;
+
   await c.env.BUCKET.put(r2Key, arrayBuffer, {
     httpMetadata: { contentType: file.type },
   });
@@ -193,6 +196,7 @@ app.post('/:scriptId/tracks', async (c) => {
     contentHash,
     fileSize: file.size,
     mimeType: file.type,
+    duration,
   });
 
   return c.json(
@@ -208,6 +212,7 @@ app.post('/:scriptId/tracks', async (c) => {
           contentHash,
           fileSize: file.size,
           mimeType: file.type,
+          duration,
         },
       ],
     },

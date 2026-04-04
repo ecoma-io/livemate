@@ -35,6 +35,7 @@ export interface VariantData {
   contentHash: string;
   fileSize: number;
   mimeType: string;
+  duration?: number | null;
 }
 
 export interface ManifestData {
@@ -79,9 +80,10 @@ export const api = {
       body: JSON.stringify({ items }),
     }),
 
-  uploadTrack: (scriptId: string, file: File) => {
+  uploadTrack: (scriptId: string, file: File, duration?: number | null) => {
     const formData = new FormData();
     formData.append('file', file);
+    if (duration != null) formData.append('duration', duration.toString());
     return fetchApi<TrackData>(`/scripts/${scriptId}/tracks`, {
       method: 'POST',
       body: formData,
@@ -98,10 +100,16 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  uploadVariant: (trackId: string, speed: number, blob: Blob) => {
+  uploadVariant: (
+    trackId: string,
+    speed: number,
+    blob: Blob,
+    duration?: number | null,
+  ) => {
     const formData = new FormData();
     formData.append('file', blob, `variant_${speed}.mp3`);
     formData.append('speed', speed.toString());
+    if (duration != null) formData.append('duration', duration.toString());
     return fetchApi<VariantData>(`/tracks/${trackId}/variants`, {
       method: 'POST',
       body: formData,

@@ -13,6 +13,7 @@ vi.mock('../../services/audio', () => ({
     play: vi.fn(),
     stop: vi.fn(),
   },
+  getDuration: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('../../services/api', () => ({
@@ -91,11 +92,27 @@ describe('DashboardView', () => {
     const store = useScriptsStore(pinia);
     store.scripts = [
       {
-        id: 's1', name: 'Script 1', color: '#ef4444', sortOrder: 0,
-        tracks: [{
-          id: 'f1', scriptId: 's1', name: 'test.mp3',
-          variants: [{ id: 'v1', trackId: 'f1', speed: 1.0, contentHash: 'abc', fileSize: 1000, mimeType: 'audio/mpeg' }],
-        }],
+        id: 's1',
+        name: 'Script 1',
+        color: '#ef4444',
+        sortOrder: 0,
+        tracks: [
+          {
+            id: 'f1',
+            scriptId: 's1',
+            name: 'test.mp3',
+            variants: [
+              {
+                id: 'v1',
+                trackId: 'f1',
+                speed: 1.0,
+                contentHash: 'abc',
+                fileSize: 1000,
+                mimeType: 'audio/mpeg',
+              },
+            ],
+          },
+        ],
       },
     ];
 
@@ -115,11 +132,27 @@ describe('DashboardView', () => {
     const player = usePlayerStore(pinia);
     store.scripts = [
       {
-        id: 's1', name: 'Script 1', color: '#ef4444', sortOrder: 0,
-        tracks: [{
-          id: 'f1', scriptId: 's1', name: 'test.mp3',
-          variants: [{ id: 'v1', trackId: 'f1', speed: 1.0, contentHash: 'abc', fileSize: 1000, mimeType: 'audio/mpeg' }],
-        }],
+        id: 's1',
+        name: 'Script 1',
+        color: '#ef4444',
+        sortOrder: 0,
+        tracks: [
+          {
+            id: 'f1',
+            scriptId: 's1',
+            name: 'test.mp3',
+            variants: [
+              {
+                id: 'v1',
+                trackId: 'f1',
+                speed: 1.0,
+                contentHash: 'abc',
+                fileSize: 1000,
+                mimeType: 'audio/mpeg',
+              },
+            ],
+          },
+        ],
       },
     ];
 
