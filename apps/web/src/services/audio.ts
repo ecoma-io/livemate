@@ -18,7 +18,12 @@ class AudioService {
   private currentHowl: Howl | null = null;
   private currentVolume = 1.0;
 
-  play(url: string, onEnd?: () => void, mimeType?: string) {
+  play(
+    url: string,
+    onEnd?: () => void,
+    mimeType?: string,
+    onLoad?: (duration: number) => void,
+  ) {
     this.stop();
 
     const format = mimeType ? MIME_TO_FORMAT[mimeType] : undefined;
@@ -28,6 +33,12 @@ class AudioService {
       ...(format ? { format: [format] } : {}),
       html5: false, // Web Audio API mode for zero-latency on cached files
       volume: this.currentVolume,
+      onload: () => {
+        if (this.currentHowl) {
+          const d = this.currentHowl.duration();
+          if (d > 0) onLoad?.(d);
+        }
+      },
       onend: () => {
         this.cleanup();
         onEnd?.();

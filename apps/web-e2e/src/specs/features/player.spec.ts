@@ -12,6 +12,7 @@ import {
   clickStopButton,
   setSpeed,
   speedDisplay,
+  countdownBadge,
 } from '../../helpers/pages';
 import { monitorConsoleErrors } from '../../helpers/monitoring';
 
@@ -389,5 +390,78 @@ test.describe('Player Page', () => {
     const target = allScripts.find((s) => s.id === script.id);
     expect(target).toBeDefined();
     expect(target?.tracks[0].variants[0].speed).toBe(1.0);
+  });
+
+  // ─── Countdown Timer ─────────────────────────────────────────────
+
+  test('shows countdown badge on active tile when variant has duration @webkit-incompatible', async ({
+    page,
+  }) => {
+    const scriptName = `CDown ${Date.now()}`;
+    const script = await tracker.createScript(scriptName);
+    const mp3 = generateTestMp3(50);
+    // Pass explicit duration so the variant.duration field is non-null
+    await uploadTrack(script.id, 'countdown.mp3', mp3, 'audio/mpeg', 30);
+
+    // Serve a long audio file so playback stays active
+    await page.route('**/api/audio/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'audio/mpeg',
+        body: generateTestMp3(64),
+      });
+    });
+
+    await page.goto('/');
+
+    const tile = scriptTile(page, scriptName);
+    await expect(tile).toBeVisible();
+
+    await tile.click();
+
+    // Countdown badge should appear (variant has duration from API)
+    const badge = countdownBadge(page, scriptName);
+    await expect(badge).toBeVisible({ timeout: 5000 });
+
+    // Badge text should match MM:SS format
+    const badgeText = await badge.textContent();
+    expect(badgeText?.trim()).toMatch(/^\d+:\d{2}$/);
+
+    await clickStopButton(page);
+  });
+
+  test('countdown badge disappears after stop @webkit-incompatible', async ({
+    page,
+  }) => {
+    const scriptName = `CDownStop ${Date.now()}`;
+    const script = await tracker.createScript(scriptName);
+    const mp3 = generateTestMp3(50);
+    // Pass explicit duration so the variant.duration field is non-null
+    await uploadTrack(script.id, 'cstop.mp3', mp3, 'audio/mpeg', 30);
+
+    await page.route('**/api/audio/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'audio/mpeg',
+        body: generateTestMp3(64),
+      });
+    });
+
+    await page.goto('/');
+
+    const tile = scriptTile(page, scriptName);
+    await expect(tile).toBeVisible();
+
+    await tile.click();
+
+    // Countdown visible while playing
+    const badge = countdownBadge(page, scriptName);
+    await expect(badge).toBeVisible({ timeout: 5000 });
+
+    // Stop playback
+    await clickStopButton(page);
+
+    // Countdown badge should be gone (tile is no longer active)
+    await expect(badge).toBeHidden({ timeout: 3000 });
   });
 });

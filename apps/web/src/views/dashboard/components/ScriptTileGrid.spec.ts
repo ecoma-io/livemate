@@ -18,6 +18,7 @@ describe('ScriptTileGrid', () => {
         activeScriptId: null,
         currentSpeed: 1.0,
         isPlaying: false,
+        countdown: null,
         ...props,
       },
       global: {
@@ -60,5 +61,18 @@ describe('ScriptTileGrid', () => {
     const tiles = wrapper.findAllComponents({ name: 'ScriptTile' });
     expect(tiles[0].props('isActive')).toBe(true);
     expect(tiles[1].props('isActive')).toBe(false);
+  });
+
+  it('passes countdown to the active tile only', () => {
+    const wrapper = mountGrid({ activeScriptId: 's1', countdown: 45 });
+    const tiles = wrapper.findAllComponents({ name: 'ScriptTile' });
+    expect(tiles[0].props('countdown')).toBe(45);
+    expect(tiles[1].props('countdown')).toBeNull();
+  });
+
+  it('passes null countdown to all tiles when no script is active', () => {
+    const wrapper = mountGrid({ activeScriptId: null, countdown: 45 });
+    const tiles = wrapper.findAllComponents({ name: 'ScriptTile' });
+    expect(tiles.every((t) => t.props('countdown') === null)).toBe(true);
   });
 });

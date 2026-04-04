@@ -114,6 +114,7 @@ export default {
     volumeLabel: 'Volume',
     loadError: 'Unable to load audio groups',
     retryButton: 'Retry',
+    countdownAriaLabel: 'Time remaining: {time}',
   },
   audioRenderer: {
     missingOriginalError: 'Original file (1.0x) not found',

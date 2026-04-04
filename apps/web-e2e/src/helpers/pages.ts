@@ -235,8 +235,10 @@ export function speedDisplay(page: Page): Locator {
 
 /** Get a script tile button on the Live Studio by name */
 export function scriptTile(page: Page, name: string): Locator {
-  // Use .first() to guard against parallel tests creating same-named scripts
-  return page.getByRole('button', { name, exact: true }).first();
+  // Use .first() to guard against parallel tests creating same-named scripts.
+  // We use filter({ hasText: name }) instead of exact name match because
+  // the button content may change (e.g., adding a countdown badge).
+  return page.getByRole('button').filter({ hasText: name }).first();
 }
 
 /** Get the STOP NOW button (only visible during playback, teleported to header) */
@@ -257,6 +259,17 @@ export async function clickStopButton(page: Page) {
     .getByText('STOP NOW')
     .dispatchEvent('click');
   await expect(stopButton(page)).toBeHidden({ timeout: 5000 });
+}
+
+/** Get the countdown badge on the active script tile */
+export function countdownBadge(page: Page, scriptName: string): Locator {
+  // Use partial text match (filter) because the active tile's button text
+  // includes both the script name and the countdown text (e.g. "1:30")
+  return page
+    .locator('button')
+    .filter({ hasText: scriptName })
+    .first()
+    .locator('[data-testid="countdown"]');
 }
 
 // ─── Render Dialog ──────────────────────────────────────────────────

@@ -1,13 +1,23 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import type { ScriptData } from '../../../stores/scripts';
 
 defineProps<{
   script: ScriptData;
   isActive: boolean;
   isAnyPlaying: boolean;
+  countdown: number | null;
 }>();
 
 const emit = defineEmits<{ play: [id: string] }>();
+
+const { t } = useI18n();
+
+function formatCountdown(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 </script>
 
 <template>
@@ -23,8 +33,22 @@ const emit = defineEmits<{ play: [id: string] }>();
     "
     @click="emit('play', script.id)"
   >
-    <span class="text-xl md:text-2xl font-bold text-white text-center leading-tight drop-shadow-md z-10">
+    <span
+      class="text-xl md:text-2xl font-bold text-white text-center leading-tight drop-shadow-md z-10"
+    >
       {{ script.name }}
+    </span>
+
+    <!-- Countdown badge when active and duration is known -->
+    <span
+      v-if="isActive && countdown !== null"
+      data-testid="countdown"
+      class="mt-2 text-lg font-mono font-bold tabular-nums text-white/90 drop-shadow-md z-10"
+      :aria-label="
+        t('studio.countdownAriaLabel', { time: formatCountdown(countdown) })
+      "
+    >
+      {{ formatCountdown(countdown) }}
     </span>
 
     <!-- Ripple wave animation when active -->
@@ -44,8 +68,13 @@ const emit = defineEmits<{ play: [id: string] }>();
 
 <style scoped>
 @keyframes height-bounce {
-  0%, 100% { height: 10%; }
-  50% { height: 80%; }
+  0%,
+  100% {
+    height: 10%;
+  }
+  50% {
+    height: 80%;
+  }
 }
 .auto-height-bounce {
   animation: height-bounce 0.8s infinite ease-in-out;

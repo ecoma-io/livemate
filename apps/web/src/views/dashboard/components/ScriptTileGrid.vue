@@ -8,6 +8,7 @@ defineProps<{
   activeScriptId: string | null;
   currentSpeed: number;
   isPlaying: boolean;
+  countdown: number | null;
 }>();
 
 const emit = defineEmits<{ play: [id: string] }>();
@@ -26,6 +27,7 @@ const { t } = useI18n();
       :script="script"
       :is-active="activeScriptId === script.id"
       :is-any-playing="isPlaying"
+      :countdown="activeScriptId === script.id ? countdown : null"
       @play="emit('play', $event)"
     />
   </div>

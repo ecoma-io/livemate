@@ -219,4 +219,20 @@ describe('DashboardView', () => {
       configurable: true,
     });
   });
+
+  it('passes player.countdown to ScriptTileGrid', () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const player = usePlayerStore(pinia);
+    player.countdown = 45;
+
+    const wrapper = mount(DashboardView, {
+      global: {
+        plugins: [pinia, PrimeVue, ToastService, i18n],
+      },
+    });
+
+    const grid = wrapper.findComponent({ name: 'ScriptTileGrid' });
+    expect(grid.props('countdown')).toBe(45);
+  });
 });

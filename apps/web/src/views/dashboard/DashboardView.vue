@@ -16,7 +16,9 @@ const { t } = useI18n();
 const { isActive } = usePageHeader(t('studio.pageTitle'));
 
 useWakeLock();
-useMediaSession(() => { if (player.isPlaying) player.stop(); });
+useMediaSession(() => {
+  if (player.isPlaying) player.stop();
+});
 
 const scriptsWithVariants = computed(() =>
   scriptsStore.scripts.filter((g) =>
@@ -53,10 +55,7 @@ function handleStop() {
       class="flex-1 min-h-0 overflow-y-auto px-4 py-6 no-scrollbar flex flex-col items-center"
     >
       <!-- Loading -->
-      <div
-        v-if="scriptsStore.loading"
-        class="flex items-center justify-center"
-      >
+      <div v-if="scriptsStore.loading" class="flex items-center justify-center">
         <i class="pi pi-spinner pi-spin text-4xl text-primary-500" />
       </div>
 
@@ -65,7 +64,9 @@ function handleStop() {
         v-else-if="scriptsStore.error"
         class="flex flex-col items-center justify-center gap-4 text-center"
       >
-        <div class="w-20 h-20 rounded-full border-2 border-dashed border-red-500/50 flex items-center justify-center">
+        <div
+          class="w-20 h-20 rounded-full border-2 border-dashed border-red-500/50 flex items-center justify-center"
+        >
           <i class="pi pi-exclamation-triangle text-3xl text-red-400" />
         </div>
         <p class="font-medium text-red-400">
@@ -85,6 +86,7 @@ function handleStop() {
         :active-script-id="player.activeScriptId"
         :current-speed="player.currentSpeed"
         :is-playing="player.isPlaying"
+        :countdown="player.countdown"
         @play="playTrack"
       />
     </div>
@@ -101,4 +103,3 @@ function handleStop() {
     />
   </div>
 </template>
-

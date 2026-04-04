@@ -16,7 +16,13 @@ describe('ScriptTile', () => {
 
   function mountTile(props = {}) {
     return mount(ScriptTile, {
-      props: { script: mockScript, isActive: false, isAnyPlaying: false, ...props },
+      props: {
+        script: mockScript,
+        isActive: false,
+        isAnyPlaying: false,
+        countdown: null,
+        ...props,
+      },
       global: {
         plugins: [createPinia(), PrimeVue, i18n],
       },
@@ -31,7 +37,9 @@ describe('ScriptTile', () => {
   it('applies script color as background', () => {
     const wrapper = mountTile();
     const button = wrapper.find('button');
-    expect(button.attributes('style')).toContain('background-color: rgb(239, 68, 68)');
+    expect(button.attributes('style')).toContain(
+      'background-color: rgb(239, 68, 68)',
+    );
   });
 
   it('emits play event with script id on click', async () => {
@@ -68,5 +76,37 @@ describe('ScriptTile', () => {
     const button = wrapper.find('button');
     expect(button.classes()).not.toContain('opacity-30');
     expect(button.classes()).toContain('ring-4');
+  });
+
+  // ─── Countdown ──────────────────────────────────────────────────
+
+  it('shows countdown when isActive and countdown is provided', () => {
+    const wrapper = mountTile({ isActive: true, countdown: 90 });
+    const badge = wrapper.find('[data-testid="countdown"]');
+    expect(badge.exists()).toBe(true);
+    expect(badge.text()).toBe('1:30');
+  });
+
+  it('shows 0:00 when countdown is 0', () => {
+    const wrapper = mountTile({ isActive: true, countdown: 0 });
+    const badge = wrapper.find('[data-testid="countdown"]');
+    expect(badge.exists()).toBe(true);
+    expect(badge.text()).toBe('0:00');
+  });
+
+  it('does not show countdown when isActive but countdown is null', () => {
+    const wrapper = mountTile({ isActive: true, countdown: null });
+    expect(wrapper.find('[data-testid="countdown"]').exists()).toBe(false);
+  });
+
+  it('does not show countdown when not active', () => {
+    const wrapper = mountTile({ isActive: false, countdown: 42 });
+    expect(wrapper.find('[data-testid="countdown"]').exists()).toBe(false);
+  });
+
+  it('formats single-digit seconds with leading zero', () => {
+    const wrapper = mountTile({ isActive: true, countdown: 65 });
+    const badge = wrapper.find('[data-testid="countdown"]');
+    expect(badge.text()).toBe('1:05');
   });
 });

@@ -12,6 +12,33 @@ export const usePlayerStore = defineStore('player', () => {
   const activeScriptId = ref<string | null>(null);
   const lastPlayedVariant = ref<Record<string, string>>({});
   const volume = ref(1.0);
+  const countdown = ref<number | null>(null);
+
+  let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+  function _clearCountdown() {
+    if (countdownTimer !== null) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    countdown.value = null;
+  }
+
+  function _startCountdown(duration: number | null | undefined) {
+    _clearCountdown();
+    if (duration == null || duration <= 0) return;
+    countdown.value = Math.ceil(duration);
+    countdownTimer = setInterval(() => {
+      if (countdown.value === null) {
+        _clearCountdown();
+        return;
+      }
+      countdown.value -= 1;
+      if (countdown.value <= 0) {
+        _clearCountdown();
+      }
+    }, 1000);
+  }
 
   function setSpeed(speed: number) {
     currentSpeed.value = speed;
@@ -45,19 +72,37 @@ export const usePlayerStore = defineStore('player', () => {
 
     // Stop current and play new
     const url = api.audioUrl(selected.id);
-    audioService.play(url, () => {
-      isPlaying.value = false;
-      activeScriptId.value = null;
-    }, selected.mimeType);
+    audioService.play(
+      url,
+      () => {
+        isPlaying.value = false;
+        activeScriptId.value = null;
+        _clearCountdown();
+      },
+      selected.mimeType,
+      (duration) => {
+        // Only start countdown if duration is available.
+        // If we already started from metadata, this updates it with real duration.
+        if (duration > 0) {
+          _startCountdown(duration);
+        }
+      },
+    );
 
     isPlaying.value = true;
     activeScriptId.value = scriptId;
+
+    // Start countdown if duration is available in metadata
+    if (selected.duration) {
+      _startCountdown(selected.duration);
+    }
   }
 
   function stop() {
     audioService.stop();
     isPlaying.value = false;
     activeScriptId.value = null;
+    _clearCountdown();
   }
 
   return {
@@ -65,6 +110,7 @@ export const usePlayerStore = defineStore('player', () => {
     isPlaying,
     activeScriptId,
     volume,
+    countdown,
     setSpeed,
     setVolume,
     play,

@@ -117,6 +117,7 @@ const vi: LocaleMessages = {
     volumeLabel: 'Âm Lượng',
     loadError: 'Không thể tải các nhóm âm thanh',
     retryButton: 'Thử Lại',
+    countdownAriaLabel: 'Thời gian còn lại: {time}',
   },
   audioRenderer: {
     missingOriginalError: 'Không tìm thấy tệp gốc (1.0x)',

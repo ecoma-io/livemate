@@ -6,10 +6,17 @@ import { audioService } from '../services/audio';
 
 vi.mock('../services/audio', () => ({
   audioService: {
-    play: vi.fn((_url: string, onEnd?: () => void) => {
-      // simulate immediate onEnd for testing
-      if (onEnd) setTimeout(onEnd, 0);
-    }),
+    play: vi.fn(
+      (
+        _url: string,
+        onEnd?: () => void,
+        _mime?: string,
+        _onLoad?: (d: number) => void,
+      ) => {
+        // simulate immediate onEnd for testing
+        if (onEnd) setTimeout(onEnd, 0);
+      },
+    ),
     stop: vi.fn(),
   },
   getDuration: vi.fn().mockResolvedValue(null),
@@ -244,6 +251,7 @@ describe('usePlayerStore', () => {
       '/api/audio/v1',
       expect.any(Function),
       'audio/mpeg',
+      expect.any(Function),
     );
   });
 
@@ -327,6 +335,274 @@ describe('usePlayerStore', () => {
       '/api/audio/v1',
       expect.any(Function),
       'audio/mpeg',
+      expect.any(Function),
     );
+  });
+
+  // ─── Countdown ───────────────────────────────────────────────────
+
+  it('countdown is null initially', () => {
+    const store = usePlayerStore();
+    expect(store.countdown).toBeNull();
+  });
+
+  it('countdown starts when variant has duration', () => {
+    vi.useFakeTimers();
+    // Override mock so onEnd does NOT fire during this test
+    mockedAudioService.play.mockImplementationOnce(() => {
+      // no-op
+    });
+
+    const scriptsStore = useScriptsStore();
+    scriptsStore.scripts = [
+      {
+        id: 'g1',
+        name: 'Script 1',
+        color: '#22c55e',
+        sortOrder: 0,
+        tracks: [
+          {
+            id: 'f1',
+            scriptId: 'g1',
+            name: 'test.mp3',
+            variants: [
+              {
+                id: 'v1',
+                trackId: 'f1',
+                speed: 1.0,
+                contentHash: 'abc',
+                fileSize: 1000,
+                mimeType: 'audio/mpeg',
+                duration: 10,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const store = usePlayerStore();
+    store.play('g1');
+    expect(store.countdown).toBe(10);
+    vi.useRealTimers();
+  });
+
+  it('countdown remains null when variant has no duration', () => {
+    const scriptsStore = useScriptsStore();
+    scriptsStore.scripts = [
+      {
+        id: 'g1',
+        name: 'Script 1',
+        color: '#22c55e',
+        sortOrder: 0,
+        tracks: [
+          {
+            id: 'f1',
+            scriptId: 'g1',
+            name: 'test.mp3',
+            variants: [
+              {
+                id: 'v1',
+                trackId: 'f1',
+                speed: 1.0,
+                contentHash: 'abc',
+                fileSize: 1000,
+                mimeType: 'audio/mpeg',
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const store = usePlayerStore();
+    store.play('g1');
+    expect(store.countdown).toBeNull();
+  });
+
+  it('countdown decrements each second via setInterval', () => {
+    vi.useFakeTimers();
+    // Override mock so onEnd does NOT fire synchronously (avoids countdown clearing)
+    mockedAudioService.play.mockImplementationOnce(() => {
+      // no-op: onEnd never fires during this test
+    });
+
+    const scriptsStore = useScriptsStore();
+    scriptsStore.scripts = [
+      {
+        id: 'g1',
+        name: 'Script 1',
+        color: '#22c55e',
+        sortOrder: 0,
+        tracks: [
+          {
+            id: 'f1',
+            scriptId: 'g1',
+            name: 'test.mp3',
+            variants: [
+              {
+                id: 'v1',
+                trackId: 'f1',
+                speed: 1.0,
+                contentHash: 'abc',
+                fileSize: 1000,
+                mimeType: 'audio/mpeg',
+                duration: 5,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const store = usePlayerStore();
+    store.play('g1');
+    expect(store.countdown).toBe(5);
+
+    vi.advanceTimersByTime(1000);
+    expect(store.countdown).toBe(4);
+
+    vi.advanceTimersByTime(2000);
+    expect(store.countdown).toBe(2);
+
+    vi.useRealTimers();
+  });
+
+  it('countdown resets to null when it reaches zero', () => {
+    vi.useFakeTimers();
+    // Override mock so onEnd does NOT fire, only the interval drives countdown
+    mockedAudioService.play.mockImplementationOnce(() => {
+      // no-op
+    });
+
+    const scriptsStore = useScriptsStore();
+    scriptsStore.scripts = [
+      {
+        id: 'g1',
+        name: 'Script 1',
+        color: '#22c55e',
+        sortOrder: 0,
+        tracks: [
+          {
+            id: 'f1',
+            scriptId: 'g1',
+            name: 'test.mp3',
+            variants: [
+              {
+                id: 'v1',
+                trackId: 'f1',
+                speed: 1.0,
+                contentHash: 'abc',
+                fileSize: 1000,
+                mimeType: 'audio/mpeg',
+                duration: 2,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const store = usePlayerStore();
+    store.play('g1');
+    expect(store.countdown).toBe(2);
+
+    vi.advanceTimersByTime(2000);
+    expect(store.countdown).toBeNull();
+
+    vi.useRealTimers();
+  });
+
+  it('countdown resets to null on stop()', () => {
+    vi.useFakeTimers();
+    // Override mock so onEnd does NOT fire during this test
+    mockedAudioService.play.mockImplementationOnce(() => {
+      // no-op
+    });
+
+    const scriptsStore = useScriptsStore();
+    scriptsStore.scripts = [
+      {
+        id: 'g1',
+        name: 'Script 1',
+        color: '#22c55e',
+        sortOrder: 0,
+        tracks: [
+          {
+            id: 'f1',
+            scriptId: 'g1',
+            name: 'test.mp3',
+            variants: [
+              {
+                id: 'v1',
+                trackId: 'f1',
+                speed: 1.0,
+                contentHash: 'abc',
+                fileSize: 1000,
+                mimeType: 'audio/mpeg',
+                duration: 30,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const store = usePlayerStore();
+    store.play('g1');
+    expect(store.countdown).toBe(30);
+
+    store.stop();
+    expect(store.countdown).toBeNull();
+
+    vi.useRealTimers();
+  });
+
+  it('countdown resets to null when audio ends (onEnd callback)', async () => {
+    vi.useFakeTimers();
+    // Override mock so onEnd is called after 100ms (not immediately)
+    mockedAudioService.play.mockImplementationOnce(
+      (_url: string, onEnd?: () => void) => {
+        setTimeout(() => onEnd?.(), 100);
+      },
+    );
+
+    const scriptsStore = useScriptsStore();
+    scriptsStore.scripts = [
+      {
+        id: 'g1',
+        name: 'Script 1',
+        color: '#22c55e',
+        sortOrder: 0,
+        tracks: [
+          {
+            id: 'f1',
+            scriptId: 'g1',
+            name: 'test.mp3',
+            variants: [
+              {
+                id: 'v1',
+                trackId: 'f1',
+                speed: 1.0,
+                contentHash: 'abc',
+                fileSize: 1000,
+                mimeType: 'audio/mpeg',
+                duration: 30,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const store = usePlayerStore();
+    store.play('g1');
+    expect(store.countdown).toBe(30);
+
+    // Simulate audio ending
+    vi.advanceTimersByTime(100);
+    expect(store.countdown).toBeNull();
+
+    vi.useRealTimers();
   });
 });
