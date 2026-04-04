@@ -143,4 +143,12 @@ export default {
     displayModeLabel: 'Display Mode',
     logoutButton: 'Log Out',
   },
+  uploadDialog: {
+    dialogTitle: 'Uploading Files',
+    uploading: 'Uploading {current} of {total}...',
+    fileName: 'File: {name}',
+    done: 'Upload complete!',
+    doneWithErrors: '{success} uploaded, {failed} failed',
+    closeButton: 'Close',
+  },
 } as const;

@@ -266,6 +266,26 @@ export function renderDialog(page: Page): Locator {
   return page.locator('.p-dialog').filter({ hasText: 'Audio Processing' });
 }
 
+// ─── Upload Progress Dialog ─────────────────────────────────────────
+
+/** Get the upload progress dialog */
+export function uploadProgressDialog(page: Page): Locator {
+  return page.locator('.p-dialog').filter({ hasText: 'Uploading Files' });
+}
+
+/**
+ * Wait for the upload progress dialog to appear, then disappear (auto-close on success).
+ * Use after triggering a file upload to assert the full upload flow completes.
+ */
+export async function waitForUploadComplete(
+  page: Page,
+  timeout = 15000,
+): Promise<void> {
+  const dialog = uploadProgressDialog(page);
+  await expect(dialog).toBeVisible({ timeout: 10000 });
+  await expect(dialog).toBeHidden({ timeout });
+}
+
 // ─── Toast ──────────────────────────────────────────────────────────
 
 /** Wait for a toast message to appear */

@@ -16,6 +16,8 @@ import ScriptForm from './components/ScriptForm.vue';
 import ScriptCard from './components/ScriptCard.vue';
 import ScriptListEmpty from './components/ScriptListEmpty.vue';
 import RenderProgressDialog from './components/RenderProgressDialog.vue';
+import UploadProgressDialog from './components/UploadProgressDialog.vue';
+import type { UploadPhase } from './components/UploadProgressDialog.vue';
 
 const store = useScriptsStore();
 const toast = useToast();
@@ -25,6 +27,14 @@ const { isActive } = usePageHeader(t('soundboardView.pageTitle'));
 const showNewScriptDialog = ref(false);
 const isSortMode = ref(false);
 const expandedScriptId = ref<string | null>(null);
+const uploadDialogVisible = ref(false);
+const uploadCurrentFileName = ref('');
+const uploadCurrentIndex = ref(0);
+const uploadTotal = ref(0);
+const uploadPhase = ref<UploadPhase>('uploading');
+const uploadSuccessCount = ref(0);
+const uploadFailedCount = ref(0);
+let uploadAutoCloseTimer: ReturnType<typeof setTimeout> | null = null;
 const menu = ref();
 const SKELETON_COUNT_KEY = 'scripts-skeleton-count';
 const skeletonCount = ref(
@@ -63,7 +73,10 @@ function handleDeleteScript(id: string) {
       severity: 'secondary',
       outlined: true,
     },
-    acceptProps: { label: t('soundboardView.common.delete'), severity: 'danger' },
+    acceptProps: {
+      label: t('soundboardView.common.delete'),
+      severity: 'danger',
+    },
     accept: async () => {
       try {
         await store.deleteScript(id);
@@ -92,7 +105,9 @@ function handleToggleExpand(scriptId: string) {
 async function handleScriptCreated(id: string) {
   expandedScriptId.value = id;
   await nextTick();
-  const el = document.querySelector(`[data-script-id="${id}"]`) as HTMLElement | null;
+  const el = document.querySelector(
+    `[data-script-id="${id}"]`,
+  ) as HTMLElement | null;
   el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -110,7 +125,13 @@ async function handleDragEnd() {
 }
 
 async function handleFileUpload(scriptId: string, files: File[]) {
-  let successCount = 0;
+  // Cancel any pending auto-close timer from a previous upload
+  if (uploadAutoCloseTimer !== null) {
+    clearTimeout(uploadAutoCloseTimer);
+    uploadAutoCloseTimer = null;
+  }
+  // Filter out files that exceed the 2MB limit and toast for each
+  const validFiles: File[] = [];
   for (const file of files) {
     if (file.size > 2 * 1024 * 1024) {
       toast.add({
@@ -121,26 +142,50 @@ async function handleFileUpload(scriptId: string, files: File[]) {
         }),
         life: 3000,
       });
-      continue;
-    }
-    try {
-      await store.uploadTrack(scriptId, file);
-      successCount++;
-    } catch (e) {
-      toast.add({
-        severity: 'error',
-        summary: t('soundboardView.toast.uploadError'),
-        detail: (e as Error).message,
-        life: 3000,
-      });
+    } else {
+      validFiles.push(file);
     }
   }
-  if (successCount > 0) {
+  if (validFiles.length === 0) return;
+
+  // Show upload progress dialog
+  uploadTotal.value = validFiles.length;
+  uploadCurrentIndex.value = 0;
+  uploadSuccessCount.value = 0;
+  uploadFailedCount.value = 0;
+  uploadPhase.value = 'uploading';
+  uploadCurrentFileName.value = '';
+  uploadDialogVisible.value = true;
+
+  for (const file of validFiles) {
+    uploadCurrentIndex.value++;
+    uploadCurrentFileName.value = file.name;
+    try {
+      await store.uploadTrack(scriptId, file);
+      uploadSuccessCount.value++;
+    } catch {
+      uploadFailedCount.value++;
+    }
+  }
+
+  uploadPhase.value = uploadFailedCount.value > 0 ? 'error' : 'done';
+
+  if (uploadSuccessCount.value > 0) {
     toast.add({
       severity: 'success',
-      summary: t('soundboardView.toast.uploadSuccess', { count: successCount }),
+      summary: t('soundboardView.toast.uploadSuccess', {
+        count: uploadSuccessCount.value,
+      }),
       life: 2000,
     });
+  }
+
+  // Auto-close dialog after short delay when all succeeded
+  if (uploadFailedCount.value === 0) {
+    uploadAutoCloseTimer = setTimeout(() => {
+      uploadDialogVisible.value = false;
+      uploadAutoCloseTimer = null;
+    }, 1500);
   }
 }
 
@@ -154,7 +199,10 @@ function handleDeleteFile(fileId: string) {
       severity: 'secondary',
       outlined: true,
     },
-    acceptProps: { label: t('soundboardView.common.delete'), severity: 'danger' },
+    acceptProps: {
+      label: t('soundboardView.common.delete'),
+      severity: 'danger',
+    },
     accept: async () => {
       try {
         await store.deleteTrack(fileId);
@@ -185,7 +233,10 @@ function handleDeleteVariant(variantId: string) {
       severity: 'secondary',
       outlined: true,
     },
-    acceptProps: { label: t('soundboardView.common.delete'), severity: 'danger' },
+    acceptProps: {
+      label: t('soundboardView.common.delete'),
+      severity: 'danger',
+    },
     accept: async () => {
       try {
         await store.deleteVariant(variantId);
@@ -265,31 +316,16 @@ const menuItems = computed(() => [
       style="padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px))"
     >
       <!-- Loading -->
-      <div
-        v-if="store.loading"
-        class="flex flex-col gap-4"
-      >
+      <div v-if="store.loading" class="flex flex-col gap-4">
         <div
           v-for="i in skeletonCount"
           :key="i"
           class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 p-4 shadow-sm"
         >
           <div class="flex items-center gap-3 mb-4">
-            <Skeleton
-              width="1.5rem"
-              height="1.5rem"
-              border-radius="0.25rem"
-            />
-            <Skeleton
-              width="2rem"
-              height="2rem"
-              border-radius="0.5rem"
-            />
-            <Skeleton
-              width="10rem"
-              height="1.25rem"
-              border-radius="0.5rem"
-            />
+            <Skeleton width="1.5rem" height="1.5rem" border-radius="0.25rem" />
+            <Skeleton width="2rem" height="2rem" border-radius="0.5rem" />
+            <Skeleton width="10rem" height="1.25rem" border-radius="0.5rem" />
           </div>
           <div class="flex flex-col gap-2">
             <Skeleton
@@ -355,7 +391,8 @@ const menuItems = computed(() => [
               />
               <span
                 class="flex-1 font-semibold text-surface-900 dark:text-white truncate"
-              >{{ script.name }}</span>
+                >{{ script.name }}</span
+              >
               <button
                 class="sort-drag-handle text-surface-400 hover:text-surface-700 cursor-grab active:cursor-grabbing p-1 shrink-0"
                 :aria-label="t('audioGroupCard.dragAriaLabel')"
@@ -367,10 +404,7 @@ const menuItems = computed(() => [
         </draggable>
 
         <!-- Normal Mode: ScriptCard list -->
-        <div
-          v-else
-          class="flex flex-col gap-6"
-        >
+        <div v-else class="flex flex-col gap-6">
           <ScriptCard
             v-for="script in store.scripts"
             :key="script.id"
@@ -390,10 +424,7 @@ const menuItems = computed(() => [
         </div>
       </template>
 
-      <ScriptListEmpty
-        v-else
-        @add-script="showNewScriptDialog = true"
-      />
+      <ScriptListEmpty v-else @add-script="showNewScriptDialog = true" />
     </main>
 
     <ScriptForm
@@ -415,11 +446,18 @@ const menuItems = computed(() => [
       :session-error-count="sessionErrorCount"
     />
 
+    <UploadProgressDialog
+      v-model:visible="uploadDialogVisible"
+      :phase="uploadPhase"
+      :current-file-name="uploadCurrentFileName"
+      :current-index="uploadCurrentIndex"
+      :total="uploadTotal"
+      :success-count="uploadSuccessCount"
+      :failed-count="uploadFailedCount"
+    />
+
     <!-- Teleport action buttons into the global top bar -->
-    <Teleport
-      v-if="isActive"
-      to="#topbar-actions"
-    >
+    <Teleport v-if="isActive" to="#topbar-actions">
       <template v-if="!isSortMode">
         <Button
           :aria-label="t('soundboardView.moreOptions')"
@@ -431,11 +469,7 @@ const menuItems = computed(() => [
           class="shadow-sm"
           @click="menu.toggle($event)"
         />
-        <Menu
-          ref="menu"
-          :model="menuItems"
-          popup
-        />
+        <Menu ref="menu" :model="menuItems" popup />
       </template>
       <Button
         v-if="isSortMode"

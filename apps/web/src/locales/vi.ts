@@ -146,6 +146,14 @@ const vi: LocaleMessages = {
     displayModeLabel: 'Chế Độ Hiển Thị',
     logoutButton: 'Đăng Xuất',
   },
+  uploadDialog: {
+    dialogTitle: 'Đang Tải Lên',
+    uploading: 'Đang tải lên {current} / {total}...',
+    fileName: 'Tệp: {name}',
+    done: 'Tải lên hoàn tất!',
+    doneWithErrors: 'Đã tải lên {success}, thất bại {failed}',
+    closeButton: 'Đóng',
+  },
 };
 
 export default vi;

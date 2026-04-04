@@ -26,6 +26,8 @@ import {
   missingVariantsBadge,
   renderDialog,
   blockFfmpegLoad,
+  uploadProgressDialog,
+  waitForUploadComplete,
 } from '../../helpers/pages';
 import {
   monitorConsoleErrors,
@@ -436,6 +438,105 @@ test.describe('Script Management', () => {
     // Both files should appear
     await expect(card.getByText('file-a.mp3')).toBeVisible();
     await expect(card.getByText('file-b.mp3')).toBeVisible();
+  });
+
+  // ─── Upload Progress Dialog ────────────────────────────────────────
+
+  test('shows upload progress dialog while uploading a file', async ({
+    page,
+  }) => {
+    await tracker.createScript('Dialog Upload Test');
+    await page.goto('/scripts');
+
+    const card = scriptCard(page, 'Dialog Upload Test');
+    const input = fileInput(card);
+    const mp3Buffer = generateTestMp3(50);
+
+    // Start upload and immediately check dialog appears
+    const uploadPromise = input.setInputFiles({
+      name: 'dialog-test.mp3',
+      mimeType: 'audio/mpeg',
+      buffer: mp3Buffer,
+    });
+
+    // Dialog should appear during upload
+    await expect(uploadProgressDialog(page)).toBeVisible({ timeout: 5000 });
+    await uploadPromise;
+
+    // Dialog should auto-close after success (reuse helper for clarity)
+    await waitForUploadComplete(page);
+
+    // Toast confirms success
+    await expectToast(page, 'uploaded');
+  });
+
+  test('upload dialog shows title and disappears on success', async ({
+    page,
+  }) => {
+    const script = await tracker.createScript('Dialog Name Test');
+    await page.goto('/scripts');
+
+    const card = scriptCardById(page, script.id);
+    const input = fileInput(card);
+    const mp3Buffer = generateTestMp3(40);
+
+    await input.setInputFiles({
+      name: 'named-file.mp3',
+      mimeType: 'audio/mpeg',
+      buffer: mp3Buffer,
+    });
+
+    // Wait for dialog to appear and verify it contains expected text
+    const dialog = uploadProgressDialog(page);
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+    await expect(dialog.getByText('Uploading Files')).toBeVisible();
+
+    // Dialog auto-closes on success
+    await expect(dialog).toBeHidden({ timeout: 8000 });
+  });
+
+  test('upload dialog stays open with close button when upload fails', async ({
+    page,
+  }) => {
+    await tracker.createScript('Dialog Error Test');
+
+    // Intercept the upload API to return a 500 error
+    await page.route('**/tracks', (route) => {
+      if (route.request().method() === 'POST') {
+        route.fulfill({
+          status: 500,
+          body: JSON.stringify({ error: 'Server error' }),
+        });
+      } else {
+        route.continue();
+      }
+    });
+
+    await page.goto('/scripts');
+
+    const card = scriptCard(page, 'Dialog Error Test');
+    const input = fileInput(card);
+
+    await input.setInputFiles({
+      name: 'fail-upload.mp3',
+      mimeType: 'audio/mpeg',
+      buffer: generateTestMp3(30),
+    });
+
+    // Dialog should appear
+    const dialog = uploadProgressDialog(page);
+    await expect(dialog).toBeVisible({ timeout: 5000 });
+
+    // Dialog should NOT auto-close (error state — user must close manually).
+    // Verify it remains visible once the error state is rendered.
+    // Use filter hasText to avoid matching PrimeVue's built-in X icon aria-label="Close"
+    const closeBtn = dialog.locator('button').filter({ hasText: 'Close' });
+    await expect(closeBtn).toBeVisible({ timeout: 5000 });
+    await expect(dialog).toBeVisible();
+
+    // User clicks Close
+    await closeBtn.click();
+    await expect(dialog).toBeHidden({ timeout: 3000 });
   });
 
   test('deletes an uploaded file with confirmation', async ({ page }) => {

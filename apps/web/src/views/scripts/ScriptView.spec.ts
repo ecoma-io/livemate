@@ -83,6 +83,7 @@ describe('ScriptView', () => {
           Teleport: true,
           ConfirmDialog: true,
           RenderProgressDialog: true,
+          UploadProgressDialog: true,
           ScriptForm: true,
         },
       },
@@ -266,9 +267,7 @@ describe('ScriptView', () => {
         name: 'Script A',
         color: '#ff0000',
         sortOrder: 0,
-        tracks: [
-          { id: 'f1', scriptId: 's1', name: 'test.mp3', variants: [] },
-        ],
+        tracks: [{ id: 'f1', scriptId: 's1', name: 'test.mp3', variants: [] }],
       },
     ];
 
@@ -515,8 +514,20 @@ describe('ScriptView', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const scripts = [
-      { id: 's1', name: 'Script A', color: '#ff0000', sortOrder: 0, tracks: [] },
-      { id: 's2', name: 'Script B', color: '#00ff00', sortOrder: 1, tracks: [] },
+      {
+        id: 's1',
+        name: 'Script A',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [],
+      },
+      {
+        id: 's2',
+        name: 'Script B',
+        color: '#00ff00',
+        sortOrder: 1,
+        tracks: [],
+      },
     ];
     mockApi.getScripts.mockResolvedValueOnce(scripts);
 
@@ -533,8 +544,20 @@ describe('ScriptView', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const scripts = [
-      { id: 's1', name: 'Script A', color: '#ff0000', sortOrder: 0, tracks: [] },
-      { id: 's2', name: 'Script B', color: '#00ff00', sortOrder: 1, tracks: [] },
+      {
+        id: 's1',
+        name: 'Script A',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [],
+      },
+      {
+        id: 's2',
+        name: 'Script B',
+        color: '#00ff00',
+        sortOrder: 1,
+        tracks: [],
+      },
     ];
     mockApi.getScripts.mockResolvedValueOnce(scripts);
 
@@ -555,8 +578,20 @@ describe('ScriptView', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const scripts = [
-      { id: 's1', name: 'Script A', color: '#ff0000', sortOrder: 0, tracks: [] },
-      { id: 's2', name: 'Script B', color: '#00ff00', sortOrder: 1, tracks: [] },
+      {
+        id: 's1',
+        name: 'Script A',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [],
+      },
+      {
+        id: 's2',
+        name: 'Script B',
+        color: '#00ff00',
+        sortOrder: 1,
+        tracks: [],
+      },
     ];
     mockApi.getScripts.mockResolvedValueOnce(scripts);
 
@@ -581,7 +616,13 @@ describe('ScriptView', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const scripts = [
-      { id: 's1', name: 'Script A', color: '#ff0000', sortOrder: 0, tracks: [] },
+      {
+        id: 's1',
+        name: 'Script A',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [],
+      },
     ];
     mockApi.getScripts.mockResolvedValueOnce(scripts);
 
@@ -653,8 +694,20 @@ describe('ScriptView', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const scripts = [
-      { id: 's1', name: 'Script A', color: '#ff0000', sortOrder: 0, tracks: [] },
-      { id: 's2', name: 'Script B', color: '#00ff00', sortOrder: 1, tracks: [] },
+      {
+        id: 's1',
+        name: 'Script A',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [],
+      },
+      {
+        id: 's2',
+        name: 'Script B',
+        color: '#00ff00',
+        sortOrder: 1,
+        tracks: [],
+      },
     ];
     mockApi.getScripts.mockResolvedValueOnce(scripts);
 
@@ -668,5 +721,163 @@ describe('ScriptView', () => {
     const cards = wrapper.findAllComponents({ name: 'ScriptCard' });
     expect(cards[0].props('isExpanded')).toBe(false);
     expect(cards[1].props('isExpanded')).toBe(true);
+  });
+
+  // ─── Upload Progress Dialog ────────────────────────────────────────
+
+  it('shows upload dialog after fileUpload event with valid files', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useScriptsStore(pinia);
+    store.scripts = [
+      {
+        id: 's1',
+        name: 'Script A',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [],
+      },
+    ];
+    const smallFile = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
+    Object.defineProperty(smallFile, 'size', { value: 500 });
+    mockApi.uploadTrack.mockResolvedValueOnce({
+      id: 'f1',
+      scriptId: 's1',
+      name: 'track.mp3',
+      variants: [],
+    });
+
+    const wrapper = mountView(pinia);
+    const scriptCard = wrapper.findComponent({ name: 'ScriptCard' });
+    scriptCard.vm.$emit('fileUpload', 's1', [smallFile]);
+    await wrapper.vm.$nextTick();
+
+    expect((wrapper.vm as any).uploadDialogVisible).toBe(true);
+    expect((wrapper.vm as any).uploadTotal).toBe(1);
+    expect((wrapper.vm as any).uploadPhase).toBe('uploading');
+  });
+
+  it('sets uploadPhase to done after successful upload', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useScriptsStore(pinia);
+    store.scripts = [
+      {
+        id: 's1',
+        name: 'Script A',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [],
+      },
+    ];
+    const smallFile = new File(['audio'], 'track.mp3', { type: 'audio/mpeg' });
+    Object.defineProperty(smallFile, 'size', { value: 500 });
+    mockApi.uploadTrack.mockResolvedValueOnce({
+      id: 'f1',
+      scriptId: 's1',
+      name: 'track.mp3',
+      variants: [],
+    });
+
+    const wrapper = mountView(pinia);
+    const scriptCard = wrapper.findComponent({ name: 'ScriptCard' });
+    await scriptCard.vm.$emit('fileUpload', 's1', [smallFile]);
+    await flushPromises();
+
+    expect((wrapper.vm as any).uploadPhase).toBe('done');
+    expect((wrapper.vm as any).uploadSuccessCount).toBe(1);
+    expect((wrapper.vm as any).uploadFailedCount).toBe(0);
+  });
+
+  it('sets uploadPhase to error when upload fails', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useScriptsStore(pinia);
+    store.scripts = [
+      {
+        id: 's1',
+        name: 'Script A',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [],
+      },
+    ];
+    const smallFile = new File(['audio'], 'fail.mp3', { type: 'audio/mpeg' });
+    Object.defineProperty(smallFile, 'size', { value: 500 });
+    mockApi.uploadTrack.mockRejectedValueOnce(new Error('Server error'));
+
+    const wrapper = mountView(pinia);
+    const scriptCard = wrapper.findComponent({ name: 'ScriptCard' });
+    await scriptCard.vm.$emit('fileUpload', 's1', [smallFile]);
+    await flushPromises();
+
+    expect((wrapper.vm as any).uploadPhase).toBe('error');
+    expect((wrapper.vm as any).uploadFailedCount).toBe(1);
+    expect((wrapper.vm as any).uploadDialogVisible).toBe(true);
+  });
+
+  it('does not show upload dialog when all files are too large', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useScriptsStore(pinia);
+    store.scripts = [
+      {
+        id: 's1',
+        name: 'Script A',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [],
+      },
+    ];
+    const bigFile = new File(['x'], 'big.mp3', { type: 'audio/mpeg' });
+    Object.defineProperty(bigFile, 'size', { value: 3 * 1024 * 1024 });
+
+    const wrapper = mountView(pinia);
+    const scriptCard = wrapper.findComponent({ name: 'ScriptCard' });
+    await scriptCard.vm.$emit('fileUpload', 's1', [bigFile]);
+    await flushPromises();
+
+    expect((wrapper.vm as any).uploadDialogVisible).toBe(false);
+    expect(mockApi.uploadTrack).not.toHaveBeenCalled();
+  });
+
+  it('tracks currentFileName during upload', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useScriptsStore(pinia);
+    store.scripts = [
+      {
+        id: 's1',
+        name: 'Script A',
+        color: '#ff0000',
+        sortOrder: 0,
+        tracks: [],
+      },
+    ];
+    const file1 = new File(['a'], 'alpha.mp3', { type: 'audio/mpeg' });
+    const file2 = new File(['b'], 'beta.mp3', { type: 'audio/mpeg' });
+    Object.defineProperty(file1, 'size', { value: 100 });
+    Object.defineProperty(file2, 'size', { value: 100 });
+    mockApi.uploadTrack
+      .mockResolvedValueOnce({
+        id: 'f1',
+        scriptId: 's1',
+        name: 'alpha.mp3',
+        variants: [],
+      })
+      .mockResolvedValueOnce({
+        id: 'f2',
+        scriptId: 's1',
+        name: 'beta.mp3',
+        variants: [],
+      });
+
+    const wrapper = mountView(pinia);
+    const scriptCard = wrapper.findComponent({ name: 'ScriptCard' });
+    await scriptCard.vm.$emit('fileUpload', 's1', [file1, file2]);
+    await flushPromises();
+
+    expect((wrapper.vm as any).uploadTotal).toBe(2);
+    expect((wrapper.vm as any).uploadSuccessCount).toBe(2);
   });
 });
