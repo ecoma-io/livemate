@@ -14,6 +14,7 @@ cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
 const AUDIO_CACHE = 'livemate-audio-v1';
+const ASSETS_CACHE = 'livemate-assets-v1';
 const MANIFEST_VERSION_KEY = '/_internal/manifest-version';
 
 // Runtime caching for audio files: CacheFirst strategy
@@ -23,6 +24,14 @@ registerRoute(
   new CacheFirst({
     cacheName: AUDIO_CACHE,
     matchOptions: { ignoreSearch: true },
+  }),
+);
+
+// Cache FFmpeg WASM and core binaries (heavy assets)
+registerRoute(
+  ({ url }) => url.pathname.startsWith('/@ffmpeg/'),
+  new CacheFirst({
+    cacheName: ASSETS_CACHE,
   }),
 );
 
@@ -36,9 +45,10 @@ self.addEventListener('message', (event) => {
 async function syncAudioCache() {
   try {
     // Determine API base URL (different ports in dev vs same-origin in prod)
-    const apiBase = self.location.port === '18180'
-      ? `${self.location.protocol}//${self.location.hostname}:18181/api`
-      : '/api';
+    const apiBase =
+      self.location.port === '18180'
+        ? `${self.location.protocol}//${self.location.hostname}:18181/api`
+        : '/api';
 
     const res = await fetch(`${apiBase}/manifest`);
     if (!res.ok) return;
@@ -78,7 +88,8 @@ async function syncAudioCache() {
     const keys = await cache.keys();
     for (const request of keys) {
       if (
-        request.url !== new URL(MANIFEST_VERSION_KEY, self.location.origin).href &&
+        request.url !==
+          new URL(MANIFEST_VERSION_KEY, self.location.origin).href &&
         !expectedUrls.has(request.url)
       ) {
         await cache.delete(request);
@@ -86,10 +97,7 @@ async function syncAudioCache() {
     }
 
     // Store new manifest version
-    await cache.put(
-      MANIFEST_VERSION_KEY,
-      new Response(manifest.version),
-    );
+    await cache.put(MANIFEST_VERSION_KEY, new Response(manifest.version));
   } catch {
     // Ignore sync errors - will retry next time
   }

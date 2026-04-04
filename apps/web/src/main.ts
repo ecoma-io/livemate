@@ -52,3 +52,8 @@ app.use(ConfirmationService);
 app.directive('tooltip', Tooltip);
 
 app.mount('#root');
+
+// Request storage persistence for offline-first resilience
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist();
+}
