@@ -1,3 +1,13 @@
+## 0.3.0 (2026-04-04)
+
+### 🚀 Features
+
+- display countdown timer on active script tiles in studio ([ea45057](https://github.com/ecoma-io/livemate/commit/ea45057))
+
+### ❤️ Thank You
+
+- John Martin @johnitvn
+
 ## 0.2.0 (2026-04-04)
 
 ### 🚀 Features
