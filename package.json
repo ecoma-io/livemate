@@ -17,7 +17,7 @@
       "vue-demi"
     ]
   },
-  "packageManager": "pnpm@10.32.1",
+  "packageManager": "pnpm@10.34.5",
   "private": true,
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
