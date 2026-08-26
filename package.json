@@ -35,7 +35,7 @@
     "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.14.0",
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
     "@cloudflare/workers-types": "^4.20260331.1",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
